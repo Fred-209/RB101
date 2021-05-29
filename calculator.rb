@@ -11,14 +11,35 @@ def prompt(message)
 end
 
 def valid_number?(num)
-  num.to_i() != 0
+  if num == '0'
+    true
+  else
+    num.to_i() != 0
+  end
 end
 
-def valid_operator?(opr)
- opr.match?(/[1234]/)
+def valid_operator?(opr, num2)
+  if num2 == '0' && opr == '4'
+    'div_by_zero'
+  else
+    %w(1 2 3 4).include?(opr)
+  end  
 end
-
 prompt("Welcome to Calculator! Enter your name:")
+
+def operator_to_message(op)
+  case op
+  when '1' 
+    'Adding'
+  when '2'
+    'Subtracting'
+  when '3'
+    'Multiplying'
+  when '4'
+    'Dividing'
+  end
+end
+
 
 name = ''
 loop do
@@ -34,11 +55,11 @@ end
 prompt("Hi, #{name}")
 
 loop do # main loop
+  
   number1 = ''
   loop do
     prompt("What's the first number?")
     number1 = Kernel.gets().chomp()
-
     if valid_number?(number1)
       break
     else
@@ -46,12 +67,12 @@ loop do # main loop
     end
   end
 
-  number2 = ''
+  number2 = 'test'
   loop do
     prompt("What's the second number?")
     number2 = Kernel.gets().chomp()
 
-    if valid_number?(number1)
+    if valid_number?(number2)
       break
     else
       prompt("That is not a valid number. Try again.")
@@ -59,7 +80,8 @@ loop do # main loop
   end
 
   operator_prompt =
-  <<-MSG
+  <<-MSG.strip.chomp
+
     What operation would you like to perform?
     1) Add
     2) Subtract
@@ -74,14 +96,17 @@ loop do # main loop
   loop do
     operator = Kernel.gets().chomp()
 
-    if valid_operator?(operator)
+    case valid_operator?(operator, number2)
+    when true
       break
-    else 
-      prompt("#{operator} is not a choice. Please choose 1, 2, 3, or 4")
+    when 'div_by_zero'
+      prompt("You cannot divide a number by 0. Choose a different operator (1, 2, 3, 4)")
+    when false
+      prompt("#{operator} is not a valid choice. Please choose 1, 2, 3, or 4")
     end
   end
 
-
+  prompt("#{operator_to_message(operator)} the two numbers...")
   result = case operator 
           when '1'
             result = number1.to_i + number2.to_i
@@ -96,7 +121,7 @@ loop do # main loop
 
   prompt("The result is #{result}.")
 
-  prompt(" Do you want to perform another calculation? (Y for yes")
+  prompt(" Do you want to perform another calculation? (Y for yes)")
   answer = Kernel.gets().chomp()
   break unless answer.downcase().start_with?('y')
 end
