@@ -23,13 +23,13 @@ def valid_operator?(opr, num2)
     'div_by_zero'
   else
     %w(1 2 3 4).include?(opr)
-  end  
+  end
 end
 prompt("Welcome to Calculator! Enter your name:")
 
 def operator_to_message(op)
   case op
-  when '1' 
+  when '1'
     'Adding'
   when '2'
     'Subtracting'
@@ -40,11 +40,11 @@ def operator_to_message(op)
   end
 end
 
-
+# get user name
 name = ''
 loop do
   name = Kernel.gets().chomp()
-  
+
   if name.empty?()
     prompt("Make sure to use a valid name.")
   else
@@ -55,7 +55,6 @@ end
 prompt("Hi, #{name}")
 
 loop do # main loop
-  
   number1 = ''
   loop do
     prompt("What's the first number?")
@@ -80,7 +79,7 @@ loop do # main loop
   end
 
   operator_prompt =
-  <<-MSG.strip.chomp
+  <<-MSG
 
     What operation would you like to perform?
     1) Add
@@ -89,9 +88,8 @@ loop do # main loop
     4) Divide
   MSG
 
-
   puts operator_prompt
-    
+
   operator = ''
   loop do
     operator = Kernel.gets().chomp()
@@ -100,24 +98,24 @@ loop do # main loop
     when true
       break
     when 'div_by_zero'
-      prompt("You cannot divide a number by 0. Choose a different operator (1, 2, 3, 4)")
+      prompt("You cannot divide a number by 0.")
+      prompt("Choose a different operator (1, 2, 3, 4)")
     when false
       prompt("#{operator} is not a valid choice. Please choose 1, 2, 3, or 4")
     end
   end
 
   prompt("#{operator_to_message(operator)} the two numbers...")
-  result = case operator 
-          when '1'
-            result = number1.to_i + number2.to_i
-          when '2'
-            result = number1.to_i - number2.to_i
-          when '3'
-            result = number1.to_i * number2.to_i
-          when '4'
-            result = number1.to_f / number2.to_f
-          end
-
+  result = case operator
+           when '1'
+             number1.to_i + number2.to_i
+           when '2'
+             number1.to_i - number2.to_i
+           when '3'
+             number1.to_i * number2.to_i
+           when '4'
+             number1.to_f / number2.to_f
+           end
 
   prompt("The result is #{result}.")
 
