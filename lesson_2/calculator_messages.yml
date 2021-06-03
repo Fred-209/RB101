@@ -1,0 +1,24 @@
+welcome: "Welcome to Calculator! Enter your name:"
+valid_name : "Make sure to use a valid name."
+greet: "Hi, #{name}"
+first_number: "What's the first number?"
+second_number: "What's the second number?"
+invalid_number: "That is not a valid number. Try again."
+invalid_operator: "is not a valid choice. Please choose (1, 2, 3, or 4): "
+div_by_0: |
+           You cannot divide a number by 0.
+           => Choose a different operator (1, 2, 3, 4)
+operator_prompt: |
+                  => What operation would you like to perform?
+                      1) Add
+                      2) Subtract
+                      3) Multiply
+                      4) Divide
+another_calculation?: " Do you want to perform another calculation? (Y for yes):"
+thank_you: "Thanks for using the calculator!!"
+adding: "Adding the two numbers..."
+subtracting: "Subtracting the two numbers..."
+multiplying: "Multiplying the two numbers..."
+dividing: "Dividing the two numbers..."
+result: "The result is"
+greet: "Hi,"

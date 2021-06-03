@@ -6,89 +6,88 @@
 # answer = Kernel.gets()
 # Kernel.puts(answer)
 
+require 'yaml'
+MESSAGES = YAML.load_file('calculator_messages.yml')
+
+
 def prompt(message)
-  puts("=>" + message)
+  puts("=> " + message)
 end
 
-def valid_number?(num)
-  if num == '0'
-    true
-  else
-    num.to_i() != 0
-  end
+def integer?(input)
+  input.to_i.to_s == input
+end
+
+def float?(input)
+  input.to_f.to_s == input
+end
+
+def number?(input)
+  integer?(input) || float?(input)
 end
 
 def valid_operator?(opr, num2)
-  if num2 == '0' && opr == '4'
+  if ( (num2 == '0.0' || num2 == '0') && (opr == '4') )
     'div_by_zero'
   else
     %w(1 2 3 4).include?(opr)
   end
 end
-prompt("Welcome to Calculator! Enter your name:")
 
 def operator_to_message(op)
-  case op
-  when '1'
-    'Adding'
-  when '2'
-    'Subtracting'
-  when '3'
-    'Multiplying'
-  when '4'
-    'Dividing'
-  end
+  word = case op
+         when '1'
+           MESSAGES['adding']
+         when '2'
+           MESSAGES['subtracting']
+         when '3'
+           MESSAGES['multiplying']
+         when '4'
+           MESSAGES['dividing']
+         end
+  word
 end
 
-# get user name
+prompt(MESSAGES['welcome'])
+
 name = ''
 loop do
   name = Kernel.gets().chomp()
 
   if name.empty?()
-    prompt("Make sure to use a valid name.")
+    prompt(MESSAGES['valid_name'])
   else
     break
   end
 end
 
-prompt("Hi, #{name}")
+prompt("#{MESSAGES['greet']} #{name}")
 
 loop do # main loop
   number1 = ''
   loop do
-    prompt("What's the first number?")
+    prompt(MESSAGES['first_number'])
     number1 = Kernel.gets().chomp()
-    if valid_number?(number1)
+    if number?(number1)
       break
     else
-      prompt("That is not a valid number. Try again.")
+      prompt(MESSAGES['invalid_number'])
     end
   end
 
   number2 = 'test'
   loop do
-    prompt("What's the second number?")
+    prompt(MESSAGES['second_number'])
     number2 = Kernel.gets().chomp()
 
-    if valid_number?(number2)
+    if number?(number2)
       break
     else
-      prompt("That is not a valid number. Try again.")
+      prompt(MESSAGES['invalid_number'])
     end
   end
 
-  operator_prompt =
-  <<-MSG
-
-    What operation would you like to perform?
-    1) Add
-    2) Subtract
-    3) Multiply
-    4) Divide
-  MSG
-
-  puts operator_prompt
+  puts MESSAGES['operator_prompt']
 
   operator = ''
   loop do
@@ -98,14 +97,13 @@ loop do # main loop
     when true
       break
     when 'div_by_zero'
-      prompt("You cannot divide a number by 0.")
-      prompt("Choose a different operator (1, 2, 3, 4)")
+      prompt(MESSAGES['div_by_0'])
     when false
-      prompt("#{operator} is not a valid choice. Please choose 1, 2, 3, or 4")
+      prompt("#{operator} #{MESSAGES['invalid_operator']}")
     end
   end
 
-  prompt("#{operator_to_message(operator)} the two numbers...")
+  prompt(operator_to_message(operator))
   result = case operator
            when '1'
              number1.to_i + number2.to_i
@@ -117,11 +115,11 @@ loop do # main loop
              number1.to_f / number2.to_f
            end
 
-  prompt("The result is #{result}.")
+  prompt("#{MESSAGES['result']} #{result}")
 
-  prompt(" Do you want to perform another calculation? (Y for yes)")
+  prompt(MESSAGES['another_calculation?'])
   answer = Kernel.gets().chomp()
   break unless answer.downcase().start_with?('y')
 end
 
-prompt("Thanks for using the calculator!")
+prompt(MESSAGES['thank_you'])
