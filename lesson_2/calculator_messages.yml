@@ -1,24 +1,64 @@
-welcome: "Welcome to Calculator! Enter your name:"
-valid_name : "Make sure to use a valid name."
-greet: "Hi, #{name}"
-first_number: "What's the first number?"
-second_number: "What's the second number?"
-invalid_number: "That is not a valid number. Try again."
-invalid_operator: "is not a valid choice. Please choose (1, 2, 3, or 4): "
-div_by_0: |
-           You cannot divide a number by 0.
-           => Choose a different operator (1, 2, 3, 4)
-operator_prompt: |
-                  => What operation would you like to perform?
-                      1) Add
-                      2) Subtract
-                      3) Multiply
-                      4) Divide
-another_calculation?: " Do you want to perform another calculation? (Y for yes):"
-thank_you: "Thanks for using the calculator!!"
-adding: "Adding the two numbers..."
-subtracting: "Subtracting the two numbers..."
-multiplying: "Multiplying the two numbers..."
-dividing: "Dividing the two numbers..."
-result: "The result is"
-greet: "Hi,"
+choose_language: |
+  Welcome to the Calculator! 
+  ¡Bienvenido a la Calculadora!
+  Please choose your choose either English(en) or Spanish(es) (en, es):
+  Elija su elección entre inglés (en) o español (es) (en, es):
+
+invalid_lang_choice: |
+                      That is not a valid language choice.
+                      => Please enter either 'en' for English or 'es' for Spanish:
+
+en:
+  lang_choice: "You chose English."
+  get_name: "Please enter your name:"
+  valid_name : "Make sure to use a valid name."
+  greet: "Hi,"
+  first_number: "What's the first number?"
+  second_number: "What's the second number?"
+  invalid_number: "That is not a valid number. Try again."
+  invalid_operator: "is not a valid choice. Please choose (1, 2, 3, or 4): "
+  div_by_0: |
+            You cannot divide a number by 0.
+            => Choose a different operator (1, 2, 3, 4)
+  operator_prompt: |
+                    => What operation would you like to perform?
+                        1) Add
+                        2) Subtract
+                        3) Multiply
+                        4) Divide
+  another_calculation?: "Do you want to perform another calculation? (Y for yes):"
+  thank_you: "Thanks for using the calculator!!"
+  adding: "Adding the two numbers..."
+  subtracting: "Subtracting the two numbers..."
+  multiplying: "Multiplying the two numbers..."
+  dividing: "Dividing the two numbers..."
+  result: "The result is"
+  
+es: 
+  lang_choice: "Elegiste el español."
+  get_name: "Por favor, escriba su nombre:"
+  greet: "Hola,"
+  valid_name : "Asegúrate de usar un nombre válido."
+  first_number: "¿Cuál es el primer número?"
+  second_number: "¿Cuál es el segundo número?"
+  invalid_number: "Ese no es un número válido. Intentar otra vez."
+  invalid_operator: "no es una elección válida. Elija (1, 2, 3 o 4):"
+  div_by_0: |
+            No se puede dividir un número por 0.
+            => Elija un operador diferente (1, 2, 3, 4)
+  operator_prompt: |
+                    => ¿Qué operación le gustaría realizar?
+                        1) Agregar
+                        2) Sustraer
+                        3) Multiplicar
+                        4) Dividir
+  another_calculation?: "¿Quieres realizar otro cálculo? (Y para sí):"
+  thank_you: "¡¡Gracias por usar la calculadora !!"
+  adding: "Sumando los dos números..."
+  subtracting: "Restar los dos números..."
+  multiplying: "Multiplicando los dos números..."
+  dividing: "Dividiendo los dos números..."
+  result: "El resultado es"
+  
+
+
