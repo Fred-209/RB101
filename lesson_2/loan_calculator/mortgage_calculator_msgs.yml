@@ -68,7 +68,7 @@ en:
     "Your monthly mortgage payment is"
   another_calculation: |
     Would you like to calculate the monthly payment for another loan?
-    Type 'y' for yes or any other character to exit the program.
+    Type 'y' for yes or 'n' for no.
   calculating:
     'Calculating'
   calculation_complete:
@@ -150,7 +150,7 @@ es:
     "Su pago hipotecario mensual es"
   another_calculation: |
     ¿Le gustaría calcular el pago mensual de otro préstamo?
-    Escriba 'y' para sí o cualquier otro carácter para salir del programa.
+    Escriba 'y' para sí o 'n' para no.
   calculating:
     'Calculadora'
   calculation_complete:
