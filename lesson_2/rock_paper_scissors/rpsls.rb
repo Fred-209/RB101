@@ -21,11 +21,11 @@ require 'colorize'
 DISPLAY_MESSAGES = YAML.load_file('rpsls.yml')
 VALID_CHOICES = %w(rock paper scissors lizard spock r p sc l sp)
 WINS_AGAINST = {
-  'rock' => %w(scissors lizard),
-  'paper' => %w(rock spock),
+  'rock'     => %w(scissors lizard),
+  'paper'    => %w(rock spock),
   'scissors' => %w(lizard paper),
-  'lizard' => %w(paper spock),
-  'spock' => %w(rock scissors)
+  'lizard'   => %w(paper spock),
+  'spock'    => %w(rock scissors)
 }
 ABBREVIATIONS = {
   'r' => 'rock',
@@ -36,16 +36,16 @@ ABBREVIATIONS = {
 }
 
 ATTACKS = {
-  'rock' => { 'lizard' => 'CRUSHES'.colorize(:light_yellow),
-              'scissors' => 'OBLITERATES'.colorize(:magenta)},
-  'paper' => { 'rock' => 'COVERS'.colorize(:light_black),
-               'spock' => 'DISPROVES'.colorize(:light_magenta)},
+  'rock'     => { 'lizard' => 'CRUSHES'.colorize(:light_yellow),
+                  'scissors' => 'OBLITERATES'.colorize(:magenta)},
+  'paper'    => { 'rock' => 'COVERS'.colorize(:light_black),
+                  'spock' => 'DISPROVES'.colorize(:light_magenta)},
   'scissors' => { 'paper' => 'CUTS'.colorize(:light_red),
                   'lizard' => 'DECAPITATES'.colorize(:red)},
-  'lizard' => { 'spock' => 'POISONS'.colorize(:green),
-                'paper' => 'EATS'.colorize(:light_white)},
-  'spock' => { 'rock'=> 'VAPORIZES'.colorize(:cyan),
-               'scissors' => 'SMASHES'.colorize(:yellow)}
+  'lizard'   => { 'spock' => 'POISONS'.colorize(:green),
+                  'paper' => 'EATS'.colorize(:light_white)},
+  'spock'    => { 'rock'=> 'VAPORIZES'.colorize(:cyan),
+                  'scissors' => 'SMASHES'.colorize(:yellow)}
 }
 
 # -------------------- METHOD DEFINITIONS -----------------------
