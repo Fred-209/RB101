@@ -16,10 +16,11 @@
 #    Score Count, rules, etc
 
 require 'yaml'
+require 'colorize'
 
 DISPLAY_MESSAGES = YAML.load_file('rpsls.yml')
 VALID_CHOICES = %w(rock paper scissors lizard spock r p sc l sp)
-WINNING_CHOICES = {
+WINS_AGAINST = {
   'rock' => %w(scissors lizard),
   'paper' => %w(rock spock),
   'scissors' => %w(lizard paper),
@@ -34,6 +35,21 @@ ABBREVIATIONS = {
   'sp' => 'spock'
 }
 
+ATTACKS = {
+  'rock' => { 'lizard' => 'CRUSHES'.colorize(:light_yellow),
+              'scissors' => 'OBLITERATES'.colorize(:magenta)},
+  'paper' => { 'rock' => 'COVERS'.colorize(:light_black),
+               'spock' => 'DISPROVES'.colorize(:light_magenta)},
+  'scissors' => { 'paper' => 'CUTS'.colorize(:light_red),
+                  'lizard' => 'DECAPITATES'.colorize(:red)},
+  'lizard' => { 'spock' => 'POISONS'.colorize(:green),
+                'paper' => 'EATS'.colorize(:light_white)},
+  'spock' => { 'rock'=> 'VAPORIZES'.colorize(:cyan),
+               'scissors' => 'SMASHES'.colorize(:yellow)}
+}
+
+# -------------------- METHOD DEFINITIONS -----------------------
+
 def add_win_to_score(score)
   score += 1
 end
@@ -46,39 +62,58 @@ def convert_abbreviation(abbreviation)
   ABBREVIATIONS[abbreviation]
 end
 
-def calculate_winner(player_choice, computer_choice)
+def calculate_round_winner(player_name, player_choice, computer_choice) 
   if player_choice == computer_choice
     'draw'
-  elsif WINNING_CHOICES[player_choice].include?(computer_choice)
-    'Player'
+  elsif WINS_AGAINST[player_choice].include?(computer_choice)
+    [player_name, player_choice, 'Jerry', computer_choice]
   else
-    'Computer'
+    ['Jerry', computer_choice, player_name, player_choice]
   end
 end
 
-def display_intro
+def determine_attack_style(winners_weapon, losers_weapon)
+  ATTACKS[winners_weapon][losers_weapon]
+end
+
+def display_intro_text
   puts "Welcome to Rock Paper Scissors Lizard Spock!"
-  print DISPLAY_MESSAGES['intro']
+  print DISPLAY_MESSAGES['intro_text']
+end
+
+def display_intro_graphic
+  print DISPLAY_MESSAGES['intro_graphic'].colorize(:cyan)
 end
 
 def display_choices_prompt
-  print "[(R)ock (P)aper (Sc)issors (L)izard (SP)ock]=> "
+  print "[(R)ock (P)aper (Sc)issors (L)izard (Sp)ock]=> "
 end
 
 def display_input_prompt
-  print "-->"
+  print "--> "
 end
 
 def display_message(message)
 end
 
-def display_results(player_choice, computer_choice, round_winner)
-  puts "Player choice: #{player_choice.capitalize}"
-  puts "Computer choice: #{computer_choice.capitalize}"
+def display_outro
+  puts DISPLAY_MESSAGES['outro'].colorize(:yellow)
+end
+
+def display_results(player_name, player_weapon, computer_weapon, round_winner, 
+                    winning_weapon, round_loser, losing_weapon)
+  puts
+  puts "#{player_name} chooses: #{player_weapon.capitalize}!"
+  puts "Jerry chooses: #{computer_weapon.capitalize}!"
   if round_winner == 'draw'
-    puts "It's a draw!! Nobody wins."
+    puts "It's a draw!! Nobody wins.".colorize(:cyan)
   else
-    puts "#{round_winner} wins!!!"
+    puts "#{round_winner}'s #{winning_weapon.capitalize} "\
+         "#{determine_attack_style(winning_weapon, losing_weapon)} "\
+         "#{round_loser}'s #{losing_weapon.capitalize}!!!"
+    puts
+    puts "#{round_winner} wins this round!"
+    puts
   end
 end
 
@@ -102,6 +137,13 @@ def get_player_choice
   player_choice
 end
 
+def get_player_name
+  print "What name do you go by? "
+  display_input_prompt()
+  name = gets.chomp.strip
+  name
+end
+
 def play_again?
   puts "Would you like to play again?"
   print "Type either 'y' for yes or 'n' for no."
@@ -114,7 +156,7 @@ def play_again?
     puts "You have to enter either either 'y' or 'n'. Try again."
   end
 
-  user_choice
+  user_choice == 'y'
 end
 
 def valid_input?(user_choice, *valid_inputs)
@@ -122,20 +164,32 @@ def valid_input?(user_choice, *valid_inputs)
   valid_inputs.include?(user_choice)
 end
 
+# ---------------------- MAIN LOOP ----------------------------------
 
+first_run = true
+player_name = ''
 loop do
-
+  clear_screen()
+  display_intro_graphic()
+  display_intro_text() if first_run
+  if first_run
+    player_name = get_player_name()
+    puts "Hello, #{player_name} =-)"
+    puts
+  end
   player_score = 0
   computer_score = 0
-
-  clear_screen()
-  display_intro()
   player_choice = get_player_choice()
   computer_choice = get_computer_choice()
-  round_winner = calculate_winner(player_choice, computer_choice)
-  display_results(player_choice, computer_choice, round_winner)
+  round_winner, winning_weapon, round_loser, losing_weapon = 
+    calculate_round_winner(player_name, player_choice, computer_choice)
+  
+  display_results(player_name, player_choice, computer_choice, round_winner,
+                  winning_weapon, round_loser, losing_weapon)
+  first_run = false
   break unless play_again?()
 
 end
 
+display_outro()
 
