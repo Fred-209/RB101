@@ -187,7 +187,7 @@ def valid_input?(user_choice, *valid_inputs)
   valid_inputs.include?(user_choice)
 end
 
-# ---------------------- MAIN LOOP ----------------------------------
+# ---------------------- MAIN BODY ----------------------------------
 
 first_run = true
 player_name = ''
