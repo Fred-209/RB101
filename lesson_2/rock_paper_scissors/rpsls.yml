@@ -27,13 +27,12 @@ intro_text: |+
   Are you ready to test your worth in a fight to the death?
   Well that's NOT what you're getting here.
   This is just a simple game of "Rock Paper Scissors Lizard Spock"
-  You'll test your ability to out-random bunch of 1's and 0's
-  named Jerry. 
+  You'll test your ability to out-random a bunch of 1's and 0's
+  named JerryBot. 
 
-  The rules are simple.
-  You choose either:
+  The rules are simple. You choose either:
   Rock, Paper, Scissors, Lizard, or Spock as your weapon.
-  Then Jerry will choose as well.
+  Then JerryBot will choose as well.
 
   The winner is determined based on the following: 
   
@@ -73,4 +72,3 @@ outro: |+
             ´´¶¶´´´´´´´´´´´¶´´¶¶´´´´´´´´´´´´´´´´¶¶
             ´´´¶¶¶¶¶¶¶¶¶¶¶¶´´´´´¶¶´´´´´´´´´´´´¶¶
             ´´´´´´´´´´´´´´´´´´´´´´´¶¶¶¶¶¶¶¶¶¶¶
-
