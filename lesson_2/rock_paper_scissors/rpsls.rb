@@ -217,8 +217,11 @@ loop do
   display_intro_graphic()
   show_rules?()
 
-  player_name = get_player_name() if first_run
-
+  if first_run 
+    player_name = get_player_name()
+    display_player_greeting(player_name)
+  end
+  
   score = { player_name => 0, 'JerryBot' => 0, 'tie' => 0 }
   until someone_won?(player_name, score)
     player_weapon = get_player_weapon_choice()
