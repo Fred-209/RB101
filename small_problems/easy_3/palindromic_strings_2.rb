@@ -11,7 +11,7 @@ def real_palindrome?(string)
   temp_string = given_chars.join
 
   temp_string == temp_string.reverse
-end
+end'*'
 
 p real_palindrome?('madam')  # ==  true 
 p real_palindrome?('Madam')  #==  true  # (case does not matter) 
