@@ -25,6 +25,15 @@
 # 9. If yes, go to #1
 # 10. Goodbye!
 
+# is_winner? - Determine if the current board is a winning board
+#   - A winning board has three x's or three o's in a row
+#   - Winning square combos:
+#       - 123/321, 147/741, 159/951, 258/852, 369/963, 357/753, 456/654, 789/987
+#   - Set a constant of these winning move combos, a multidimensional array
+#   - Track player move and computer move history
+#     - arrays of integers would work well 
+#   - If the difference between player/computer hisory array and any winning combos array is 0 or empty, then return true
+#    
 #Fun features list
 # - add color and choice of color for your symbol
 # - Add more visually fun welcome screen
@@ -119,6 +128,18 @@ ICON
 
 PROMPT = "=> "
 
+WINNING_SQ_COMBOS = 
+[
+  [1, 2, 3],
+  [1, 4, 7], 
+  [1, 5, 9],
+  [2, 5, 8],
+  [3, 6, 9],
+  [3, 5, 7],
+  [4, 5, 6], 
+  [7, 8, 9]
+]
+
 def assign_symbols
   player_symbol = player_choose_symbol()
 
@@ -134,9 +155,10 @@ def clear_screen
   system('clear')
 end
 
-def computer_takes_turn(available_squares)
+def computer_takes_turn(available_squares, computer_turn_history)
   computer_choice = available_squares.sample
   display_thinking_animation(computer_choice)
+  computer_turn_history << computer_choice
   computer_choice
 end
 
@@ -203,6 +225,18 @@ def initialize_board
   
 end
 
+def play_again?
+  choice = nil
+  print "Do you want to play again? #{PROMPT}"
+
+  loop do
+    choice = gets.chomp
+    break if choice =~ /[yn]/i
+    puts "You  must choose 'Y' or 'N' #{PROMPT}"
+  end
+  choice.downcase == 'y'  
+end
+
 def player_choose_symbol
   symbol = nil
   puts ""
@@ -218,7 +252,7 @@ def player_choose_symbol
   symbol
 end
 
-def player_takes_turn(available_squares)
+def player_takes_turn(available_squares, player_turn_history)
   player_turn = nil
   
   puts "#{BOARD_ICON}Which square do you want to mark?"
@@ -228,14 +262,15 @@ def player_takes_turn(available_squares)
   print PROMPT
 
   loop do
-    player_turn = gets.chomp.to_i
-    break if valid_square_choice?(player_turn, available_squares)
+    player_turn = gets.chomp
+    break if valid_square_choice?(player_turn.to_i, available_squares)
     puts "You must enter a number from one of the available squares."
     print "Available choices left are squares " 
     display_available_squares(available_squares)
     print PROMPT
   end
-  player_turn
+  player_turn_history << player_turn.to_i
+  player_turn.to_i
 end
 
 def update_board(symbol, square, board, available_squares)
@@ -247,9 +282,23 @@ def valid_square_choice?(choice, available_squares)
   available_squares.include?(choice)
 end
 
+def winner?(move_history)
+  p move_history
+  WINNING_SQ_COMBOS.any? do |combo|
+      p combo
+      p combo.difference(move_history)
+      p (combo.difference(move_history)).empty?
+      (combo.difference(move_history)).empty?
+  end
+end
+
 loop do #main loop
   display_welcome()
   player_symbol, computer_symbol = assign_symbols()
+  player_turn_history = []
+  computer_turn_history = []
+  winner = nil
+  loser = nil
   clear_screen()
 
   board = initialize_board()
@@ -257,17 +306,22 @@ loop do #main loop
   display_board(board)
 
   loop do
-    player_turn = player_takes_turn(available_squares)
+    player_turn = player_takes_turn(available_squares, player_turn_history)
     update_board(player_symbol, player_turn, board, available_squares)
     display_board(board)
+    break if winner?(player_turn_history)
 
-    computer_turn = computer_takes_turn(available_squares)
+    computer_turn = computer_takes_turn(available_squares, 
+                    computer_turn_history)
     update_board(computer_symbol, computer_turn, board, available_squares)
     display_board(board)
+    break if winner?(computer_turn_history)
   end
-
-  clear_screen()
+  
+  # clear_screen()
   display_board(board)
-
+  puts "We have a winner!!"
+  gets.chomp
+  break unless play_again?()
 
 end
