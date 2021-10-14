@@ -5,8 +5,9 @@
 # Tic Tac Toe
 
 # 1. Display the initial empty 3x3 board
+# 2. Ask the user to choose X or O
 # 2. Ask the user to mark a square.
-  # - define player_choose_move() method
+  # - define player_takes_turn() method
   #   - Prompt player to choose either 
 # 3. Computer marks a square.
 # 4. Display the updated board state.
@@ -90,20 +91,22 @@ EMPTY_SQUARE = [ [' ', ' ', ' ', ' ', ' ', ' '],
                  [' ', ' ', ' ', ' ', ' ', ' '],
                  [' ', ' ', ' ', ' ', ' ', ' '] ]    
 
-                 BOARD_ICON = <<-PIC
-                 1  |  2  |  3  
+BOARD_ICON = <<-ICON
+
+   1  |  2  |  3  
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-4  |  5  |  6  
+   4  |  5  |  6  
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ 
-7  |  8  |  9   
-PIC
+   7  |  8  |  9   
+
+ICON
 
 PROMPT = "=> "
 
-def assign_marks
-  player_mark = choose_mark()
+def assign_symbols
+  player_symbol = player_choose_symbol()
 
-  case player_mark.downcase
+  case player_symbol.downcase
   when 'x'
     return X_SQUARE, O_SQUARE
   else
@@ -111,20 +114,20 @@ def assign_marks
   end
 end
 
-def choose_mark
-  mark = nil
+def player_choose_symbol
+  symbol = nil
   puts ""
   print "Do you want to be X's or O's?#{PROMPT}"
 
   loop do
-    mark = gets.chomp
-    break if mark =~ /[xXoO]/
+    symbol = gets.chomp
+    break if symbol =~ /[xXoO]/
     puts "You have to type either X or O. Try again#{PROMPT}"
   end
-  mark
+  symbol
 end
 
-def computer_choose_move
+def computer_marks_square(computer_mark)
 end
 
 def display_board(board)
@@ -175,32 +178,32 @@ def initialize_board
 
 end
 
-def player_choose_move
-  player_move = nil
+def player_takes_turn
+  player_turn = nil
 
   print "#{BOARD_ICON} Which square do you want to mark with X?"
   puts "Enter a square number #{PROMPT}"
   loop do
-    player_move = gets.chomp
-    break if player_move =~ /[1-9]/
+    player_turn = gets.chomp
+    break if player_turn =~ /[1-9]/
     puts "You must enter a number between 1 and 9#{PROMPT}"
   end
-  player_move
+  player_turn
 end
 
-def update_board(mark, square, board)
-  board[square] = mark
+def update_board(symbol, square, board)
+  board[square] = symbol
 end
 
 loop do #main loop
-  player_mark, computer_mark = assign_marks()
-  board = initialize_board()
-  
-
   display_welcome()
+  player_symbol, computer_symbol = assign_symbols()
+
+  board = initialize_board()
   display_board(board)
-  player_move = player_choose_move()
-  update_board(player_mark, player_move.to_i, board)
+
+  player_turn = player_takes_turn()
+  update_board(player_symbol, player_turn.to_i, board)
   p board
   display_board(board)
 
