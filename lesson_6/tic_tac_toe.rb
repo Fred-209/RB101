@@ -6,6 +6,8 @@
 
 # 1. Display the initial empty 3x3 board
 # 2. Ask the user to mark a square.
+  # - define player_choose_move() method
+  #   - Prompt player to choose either 
 # 3. Computer marks a square.
 # 4. Display the updated board state.
 # 5. If winner, display winner. 
@@ -71,6 +73,8 @@ X = [ [' ', 'x' ' ' 'x', ' ', ' '], [' ', ' ', 'x', ' ', ' ', ' '], [' ', 'x', '
 # display_board(board)
 # print X
 # print O
+require 'pry'
+
 X_SQUARE = [ [' ', 'x', ' ', ' ', 'x', ' '],
              [' ', ' ', 'x', 'x', ' ', ' '],
              [' ', ' ', 'x', 'x', ' ', ' '],
@@ -86,40 +90,119 @@ EMPTY_SQUARE = [ [' ', ' ', ' ', ' ', ' ', ' '],
                  [' ', ' ', ' ', ' ', ' ', ' '],
                  [' ', ' ', ' ', ' ', ' ', ' '] ]    
 
-board = {
-  sq1: EMPTY_SQUARE,
-  sq2: EMPTY_SQUARE,
-  sq3: EMPTY_SQUARE,
-  sq4: EMPTY_SQUARE,
-  sq5: EMPTY_SQUARE,
-  sq6: EMPTY_SQUARE,
-  sq7: EMPTY_SQUARE,
-  sq8: EMPTY_SQUARE,
-  sq9: EMPTY_SQUARE
-}
+                 BOARD_ICON = <<-PIC
+                 1  |  2  |  3  
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+4  |  5  |  6  
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ 
+7  |  8  |  9   
+PIC
+
+PROMPT = "=> "
+
+def assign_marks
+  player_mark = choose_mark()
+
+  case player_mark.downcase
+  when 'x'
+    return X_SQUARE, O_SQUARE
+  else
+    return O_SQUARE, X_SQUARE
+  end
+end
+
+def choose_mark
+  mark = nil
+  puts ""
+  print "Do you want to be X's or O's?#{PROMPT}"
+
+  loop do
+    mark = gets.chomp
+    break if mark =~ /[xXoO]/
+    puts "You have to type either X or O. Try again#{PROMPT}"
+  end
+  mark
+end
+
+def computer_choose_move
+end
 
 def display_board(board)
   dotted_line = "------+------+------"
   
   puts ""
-  puts "#{board[:sq1][0].join}|#{board[:sq2][0].join}|#{board[:sq3][0].join}"
-  puts "#{board[:sq1][1].join}|#{board[:sq2][1].join}|#{board[:sq3][1].join}"
-  puts "#{board[:sq1][2].join}|#{board[:sq2][2].join}|#{board[:sq3][2].join}"
-  puts "#{board[:sq1][3].join}|#{board[:sq2][3].join}|#{board[:sq3][3].join}"
+  puts "#{board[1][0].join}|#{board[2][0].join}|#{board[3][0].join}"
+  puts "#{board[1][1].join}|#{board[2][1].join}|#{board[3][1].join}"
+  puts "#{board[1][2].join}|#{board[2][2].join}|#{board[3][2].join}"
+  puts "#{board[1][3].join}|#{board[2][3].join}|#{board[3][3].join}"
   puts dotted_line
-  puts "#{board[:sq4][0].join}|#{board[:sq5][0].join}|#{board[:sq6][0].join}"
-  puts "#{board[:sq4][1].join}|#{board[:sq5][1].join}|#{board[:sq6][1].join}"
-  puts "#{board[:sq4][2].join}|#{board[:sq5][2].join}|#{board[:sq6][2].join}"
-  puts "#{board[:sq4][3].join}|#{board[:sq5][3].join}|#{board[:sq6][3].join}"
+  puts "#{board[4][0].join}|#{board[5][0].join}|#{board[6][0].join}"
+  puts "#{board[4][1].join}|#{board[5][1].join}|#{board[6][1].join}"
+  puts "#{board[4][2].join}|#{board[5][2].join}|#{board[6][2].join}"
+  puts "#{board[4][3].join}|#{board[5][3].join}|#{board[6][3].join}"
   puts dotted_line
-  puts "#{board[:sq7][0].join}|#{board[:sq8][0].join}|#{board[:sq9][0].join}"
-  puts "#{board[:sq7][1].join}|#{board[:sq8][1].join}|#{board[:sq9][1].join}"
-  puts "#{board[:sq7][2].join}|#{board[:sq8][2].join}|#{board[:sq9][2].join}"
-  puts "#{board[:sq7][3].join}|#{board[:sq8][3].join}|#{board[:sq9][3].join}"
+  puts "#{board[7][0].join}|#{board[8][0].join}|#{board[9][0].join}"
+  puts "#{board[7][1].join}|#{board[8][1].join}|#{board[9][1].join}"
+  puts "#{board[7][2].join}|#{board[8][2].join}|#{board[9][2].join}"
+  puts "#{board[7][3].join}|#{board[8][3].join}|#{board[9][3].join}"
   puts ""
 
 end
 
+def display_welcome
+  puts ""
+  puts "Welcome to Tic Tac Toe"
+  puts "You are the 'X', the computer is 'O'."
+  puts ""
+  puts "The squares are labeled as:"
+  puts BOARD_ICON
+  puts
+  puts
+end
+
+def initialize_board
+  board = {
+    1 => EMPTY_SQUARE,
+    2 => EMPTY_SQUARE,
+    3 => EMPTY_SQUARE,
+    4 => EMPTY_SQUARE,
+    5 => EMPTY_SQUARE,
+    6 => EMPTY_SQUARE,
+    7 => EMPTY_SQUARE,
+    8 => EMPTY_SQUARE,
+    9 => EMPTY_SQUARE
+  }
+
+end
+
+def player_choose_move
+  player_move = nil
+
+  print "#{BOARD_ICON} Which square do you want to mark with X?"
+  puts "Enter a square number #{PROMPT}"
+  loop do
+    player_move = gets.chomp
+    break if player_move =~ /[1-9]/
+    puts "You must enter a number between 1 and 9#{PROMPT}"
+  end
+  player_move
+end
+
+def update_board(mark, square, board)
+  board[square] = mark
+end
+
 loop do #main loop
+  player_mark, computer_mark = assign_marks()
+  board = initialize_board()
+  
+
+  display_welcome()
   display_board(board)
+  player_move = player_choose_move()
+  update_board(player_mark, player_move.to_i, board)
+  p board
+  display_board(board)
+
+
 end
