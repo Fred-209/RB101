@@ -10,6 +10,8 @@
   # - define player_takes_turn() method
   #   - Prompt player to choose either 
 # 3. Computer marks a square.
+  # - Random sample of integers 1-9 to represent the square it chooses
+  # - Update the board with the computer's symbol at its chosen square
 # 4. Display the updated board state.
 # 5. If winner, display winner. 
 # 6. If board is full, display tie.
@@ -114,21 +116,13 @@ def assign_symbols
   end
 end
 
-def player_choose_symbol
-  symbol = nil
-  puts ""
-  print "Do you want to be X's or O's?#{PROMPT}"
 
-  loop do
-    symbol = gets.chomp
-    break if symbol =~ /[xXoO]/
-    puts "You have to type either X or O. Try again#{PROMPT}"
-  end
-  symbol
+def computer_takes_turn
+  computer_choice = (1..9).to_a.sample
+  display_thinking_animation(computer_choice)
+  computer_choice
 end
 
-def computer_marks_square(computer_mark)
-end
 
 def display_board(board)
   dotted_line = "------+------+------"
@@ -149,7 +143,18 @@ def display_board(board)
   puts "#{board[7][2].join}|#{board[8][2].join}|#{board[9][2].join}"
   puts "#{board[7][3].join}|#{board[8][3].join}|#{board[9][3].join}"
   puts ""
+  
+end
 
+def display_thinking_animation(choice)
+  print "The computer is thinking"
+  5.times do |_|
+    print '.'
+    sleep 0.6
+  end
+  puts "The computer chose to mark square #{choice}!"
+  puts "Press any key to continue."
+  gets.chomp
 end
 
 def display_welcome
@@ -175,12 +180,25 @@ def initialize_board
     8 => EMPTY_SQUARE,
     9 => EMPTY_SQUARE
   }
+  
+end
 
+def player_choose_symbol
+  symbol = nil
+  puts ""
+  print "Do you want to be X's or O's?#{PROMPT}"
+
+  loop do
+    symbol = gets.chomp
+    break if symbol =~ /[xXoO]/
+    puts "You have to type either X or O. Try again#{PROMPT}"
+  end
+  symbol
 end
 
 def player_takes_turn
   player_turn = nil
-
+  
   print "#{BOARD_ICON} Which square do you want to mark with X?"
   puts "Enter a square number #{PROMPT}"
   loop do
@@ -188,7 +206,7 @@ def player_takes_turn
     break if player_turn =~ /[1-9]/
     puts "You must enter a number between 1 and 9#{PROMPT}"
   end
-  player_turn
+  player_turn.to_i
 end
 
 def update_board(symbol, square, board)
@@ -203,8 +221,11 @@ loop do #main loop
   display_board(board)
 
   player_turn = player_takes_turn()
-  update_board(player_symbol, player_turn.to_i, board)
-  p board
+  update_board(player_symbol, player_turn, board)
+  computer_turn = computer_takes_turn()
+  update_board(computer_symbol, computer_turn, board)
+
+  print board
   display_board(board)
 
 
