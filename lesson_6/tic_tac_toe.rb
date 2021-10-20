@@ -2,113 +2,6 @@
 
 # The first player to mark their symbol on three squares that are connected either horizontally, vertically, or diagonally, is the winner.
 
-# Tic Tac Toe
-
-# 1. Display the initial empty 3x3 board
-# 2. Ask the user to choose X or O
-# 2. Ask the user to mark a square.
-
-# - define player_takes_turn() method
-#   - Prompt player to choose either
-#   - Verify it's valid input
-#   - removes square choice from list of available squares
-# - verify square has not already been marked
-# 3. Computer marks a square.
-
-# - Random sample of integers 1-9 to represent the square it chooses
-# - verify square has not already been marked
-# - Update the board with the computer's symbol at its chosen square
-# remove square choice from list of available squares
-# 4. Display the updated board state.
-
-# 5. If winner, display winner.
-# 6. If board is full, display tie.
-# 7. If neither winner nor board is full, go to #2
-# 8. Play again?
-# 9. If yes, go to #1
-# 10. Goodbye!
-
-# is_have_a_winner? - Determine if the current board is a winning board
-#   - A winning board has three x's or three o's in a row
-#   - Winning square combos:
-#       - 123/321, 147/741, 159/951, 258/852, 369/963, 357/753, 456/654, 789/987
-#   - Set a constant of these winning move combos, a multidimensional array
-#   - Track player move and computer move history
-
-#     - arrays of integers would work well
-#   - If the difference between player/computer hisory array and any winning combos array is 0 or empty, then return true
-
-#Fixes
-
-# -
-#Fun features list
-# - add color and choice of color for your symbol
-# - Add more visually fun welcome screen
-# - add ability to track what squares are still available as a choice
-
-# - Initially set to the keys from the board hash (1-9) 'available_squares = [array of board hash keys]'
-# - As a square is chosen by either the player or computer, delete this key from available_squares array
-
-=begin
-# Figure out how to draw an X or O using the entire board space instead of a single character 
-# - The square grid will be 6 empty spaces across and 3 empty spaces vertical
-# - Maybe a nested array could represent the squares
-# - Each coordinate in the square will be filled with either a blank space, an X, or an O
-# - Those patterns will always be the same, but which one is filling the square can change
-# The entire board can be another array who's elements are made up of the 9 square nested arrays
-# what an empty square array would look like
-[ [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '] ]
-
-# an X representation in a nested array:
-X = [ [' ', 'x' ' ' 'x', ' ', ' '], [' ', ' ', 'x', ' ', ' ', ' '], [' ', 'x', ' ', 'x', ' ', ' '] ]
-
-
-
-=end
-
-# X = <<-X
-
-#  x x
-#   x
-#  x x
-# X
-
-# O = <<-O
-
-#   oo
-#  o  o
-#   oo
-# O
-
-# def display_board(board)
-
-# puts ""
-# puts " #{board[1]} #{board[1]}  |      |      "
-# puts "  #{board[1]}   |      |      "
-# puts " #{board[1]} #{board[1]}  |      |      "
-# puts "------+------+------"
-# puts "      |      |      "
-# puts "      |      |      "
-# puts "      |      |      "
-# puts "------+------+------"
-# puts "      |      |      "
-# puts "      |      |      "
-# puts "      |      |      "
-# puts ""
-# end
-
-# def initialize_board
-#   new_board = {}
-#   (1..9).each {|num| new_board[num] = ' '}
-#   new_board
-# end
-# board = initialize_board()
-
-# display_board(board)
-# print X
-# print O
-require 'pry'
-
 def assign_symbols
   player_symbol = choose_symbol
 
@@ -132,21 +25,23 @@ def choose_square_to_mark(available_squares)
     display_available_squares(available_squares)
     print PROMPT
   end
+  puts "You chose to mark square #{player_square_choice}!"
+  display_enter_prompt
   player_square_choice.to_i
 end
 
 def choose_symbol
   symbol = nil
   puts ''
-  print "Do you want to be X's or O's?#{PROMPT}"
-
+  puts "Do you want to be X's or O's?"
+  print "Type 'X' for X's or 'O' for O's#{PROMPT}"
   loop do
     symbol = gets.chomp
-    break if symbol =~ /[xXoO]/
+    break if symbol =~ /\A[xXoO]\z/
     puts "You have to type either X or O. Try again#{PROMPT}"
   end
-  puts "You chose to be #{symbol.upcase}'s. Press any key to continue."
-  gets.chomp
+  puts "You chose to be #{symbol.upcase}'s."
+  display_enter_prompt
   symbol
 end
 
@@ -165,7 +60,7 @@ def congratulate_winner(winner)
   if winner == 'Player'
     puts "Congratulations!! You Won! You're the Tic-Tac-Toe Champ!"
   else
-    puts "Looks like the computer won this game. Try again and show it who's boss."
+    puts "Looks like the computer won this game. Try again and show it who's boss!"
   end
 end
 
@@ -174,6 +69,9 @@ def display_available_squares(available_squares)
 end
 
 def display_board(board)
+  clear_screen
+  puts 'GAME BOARD'.center(80)
+  puts ''
   dotted_line = '------+------+------'
 
   puts ''
@@ -192,8 +90,11 @@ def display_board(board)
   puts "#{board[7][2].join}|#{board[8][2].join}|#{board[9][2].join}".center(80)
   puts "#{board[7][3].join}|#{board[8][3].join}|#{board[9][3].join}".center(80)
   puts ''
-  print "Press any key to continue #{PROMPT}"
-  gets.chomp
+end
+
+def display_enter_prompt
+  puts 'Press enter to continue:'
+  gets
 end
 
 def display_goodbye_message
@@ -215,7 +116,7 @@ def display_thinking_animation(choice)
     sleep 0.6
   end
   puts "The computer chose to mark square #{choice}!"
-  gets.chomp
+  display_enter_prompt
 end
 
 def display_tie_game
@@ -225,9 +126,12 @@ end
 def display_welcome
   clear_screen
   puts ''
-  puts 'Welcome to Tic Tac Toe'
+  puts 'Welcome to Tic Tac Toe!'
   puts ''
-  puts 'The squares are labeled as:'
+  puts "This classic game of X's and O's will pit you against a computer opponent."
+  puts 'The game board is made up of a 3x3 grid of squares.'
+  puts 'In order to choose which square you want, you will type in the number from this handy guide below that corresponds to your square:'
+  puts ''
   puts BOARD_ICON
   puts
   puts
@@ -319,8 +223,7 @@ SQUARES GUIDE
 
 ICON
 
-PROMPT = '=> '
-
+PROMPT = ' => '
 WINNING_SQUARE_COMBOS = [
   [1, 2, 3],
   [1, 4, 7],
@@ -332,6 +235,7 @@ WINNING_SQUARE_COMBOS = [
   [7, 8, 9],
 ]
 
+has_seen_welcome_screen = false
 loop do
   board = initialize_board
   available_squares = board.keys
@@ -340,7 +244,8 @@ loop do
   winner = nil
 
   clear_screen
-  display_welcome
+  display_welcome unless has_seen_welcome_screen
+  has_seen_welcome_screen = true
   player_symbol, computer_symbol = assign_symbols
 
   display_board(board)
