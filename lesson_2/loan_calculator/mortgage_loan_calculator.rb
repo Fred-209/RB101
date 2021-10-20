@@ -6,7 +6,7 @@
 require 'yaml'
 
 MESSAGES = YAML.load_file('mortgage_calculator_msgs.yml')
-LANGUAGES_AVAILABLE = ['en', 'es']
+LANGUAGES_AVAILABLE = %w[en es]
 
 #--------------METHOD DEFINITIONS----------------------------------------------
 
@@ -17,9 +17,7 @@ def another_calculation?(language)
 end
 
 def calculate_monthly_payment(loan_amt, monthly_int_rate, months, years)
-  if months == 0.0
-    months = years * 12
-  end
+  months = years * 12 if months == 0.0
   if monthly_int_rate == 0.0
     loan_amt / months
   else
@@ -38,7 +36,7 @@ def choose_language
     if LANGUAGES_AVAILABLE.include?(language_choice)
       confirmed = confirm_language_choice(language_choice)
       return language_choice if confirmed
-      choose_language()
+      choose_language
       return language_choice
     else
       puts MESSAGES['invalid_language']
@@ -51,7 +49,7 @@ def choose_y_or_n(language)
   loop do
     prompt('y/n')
     choice = gets.chomp.downcase.strip
-    break if ['y', 'n'].include?(choice)
+    break if %w[y n].include?(choice)
     puts language['invalid_y_or_n']
   end
 
@@ -217,13 +215,13 @@ def zero_or_positive?(number)
 end
 #------------------------------------------------------------------------------
 
-clear_screen()
-lang_choice = choose_language()
+clear_screen
+lang_choice = choose_language
 lang_choice_messages = MESSAGES[lang_choice]
 
 # main loop
 loop do
-  clear_screen()
+  clear_screen
   display_intro(lang_choice_messages)
 
   loan_amount = get_loan_amount(lang_choice_messages)
@@ -235,14 +233,26 @@ loop do
   apr_decimal = apr_percent / 100
   monthly_int_decimal = apr_decimal / 12
   loan_duration_message =
-    set_loan_duration_message(loan_duration_type, loan_months, loan_years,
-                              lang_choice_messages)
+    set_loan_duration_message(
+      loan_duration_type,
+      loan_months,
+      loan_years,
+      lang_choice_messages,
+    )
   monthly_payment =
-    calculate_monthly_payment(loan_amount, monthly_int_decimal, loan_months,
-                              loan_years)
+    calculate_monthly_payment(
+      loan_amount,
+      monthly_int_decimal,
+      loan_months,
+      loan_years,
+    )
 
-  display_recap(lang_choice_messages, loan_amount, apr_percent,
-                loan_duration_message)
+  display_recap(
+    lang_choice_messages,
+    loan_amount,
+    apr_percent,
+    loan_duration_message,
+  )
   display_progress_bar(lang_choice_messages)
   display_monthly_payment(monthly_payment, lang_choice_messages)
 

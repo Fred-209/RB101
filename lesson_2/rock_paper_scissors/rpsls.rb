@@ -9,33 +9,54 @@ require 'colorize'
 
 DISPLAY_MESSAGES = YAML.load_file('rpsls.yml')
 ABBREVIATIONS = {
-  'r'  => 'rock',
-  'p'  => 'paper',
+  'r' => 'rock',
+  'p' => 'paper',
   'sc' => 'scissors',
-  'l'  => 'lizard',
-  'sp' => 'spock'
+  'l' => 'lizard',
+  'sp' => 'spock',
 }
 ATTACKS = {
-  'rock'     => { 'lizard'   => 'CRUSHES'.colorize(:light_yellow),
-                  'scissors' => 'OBLITERATES'.colorize(:magenta) },
-  'paper'    => { 'rock'     => 'COVERS'.colorize(:light_black),
-                  'spock'    => 'DISPROVES'.colorize(:light_magenta) },
-  'scissors' => { 'paper'    => 'CUTS'.colorize(:light_red),
-                  'lizard'   => 'DECAPITATES'.colorize(:red) },
-  'lizard'   => { 'spock'    => 'POISONS'.colorize(:green),
-                  'paper'    => 'EATS'.colorize(:light_white) },
-  'spock'    => { 'rock'     => 'VAPORIZES'.colorize(:cyan),
-                  'scissors' => 'SMASHES'.colorize(:yellow) }
+  'rock' => {
+    'lizard' => 'CRUSHES'.colorize(:light_yellow),
+    'scissors' => 'OBLITERATES'.colorize(:magenta),
+  },
+  'paper' => {
+    'rock' => 'COVERS'.colorize(:light_black),
+    'spock' => 'DISPROVES'.colorize(:light_magenta),
+  },
+  'scissors' => {
+    'paper' => 'CUTS'.colorize(:light_red),
+    'lizard' => 'DECAPITATES'.colorize(:red),
+  },
+  'lizard' => {
+    'spock' => 'POISONS'.colorize(:green),
+    'paper' => 'EATS'.colorize(:light_white),
+  },
+  'spock' => {
+    'rock' => 'VAPORIZES'.colorize(:cyan),
+    'scissors' => 'SMASHES'.colorize(:yellow),
+  },
 }
 
-COLORS = [
-  :light_black, :red, :light_red, :green, :light_green, :yellow, :light_yellow,
-  :light_blue, :magenta, :light_magenta, :cyan, :light_cyan, :default
+COLORS = %i[
+  light_black
+  red
+  light_red
+  green
+  light_green
+  yellow
+  light_yellow
+  light_blue
+  magenta
+  light_magenta
+  cyan
+  light_cyan
+  default
 ]
 
 MAX_WINS = 3
 INPUT_PROMPT = '-->'
-YES_NO = ['y', 'n', 'no', 'yes']
+YES_NO = %w[y n no yes]
 
 def clear_screen
   system('clear')
@@ -76,10 +97,10 @@ end
 
 def display_choices_prompt
   puts
-  puts "Which weapon do you choose?"
-  puts "Abbreviations are ok."
+  puts 'Which weapon do you choose?'
+  puts 'Abbreviations are ok.'
   puts
-  print "[(R)ock (P)aper (Sc)issors (L)izard (Sp)ock]=> "
+  print '[(R)ock (P)aper (Sc)issors (L)izard (Sp)ock]=> '
 end
 
 def display_intro_graphic
@@ -96,7 +117,7 @@ def display_outro
 end
 
 def display_play_again_prompt
-  puts "Would you like to play again?"
+  puts 'Would you like to play again?'
   print "Type either 'y' for yes or 'n' for no."
 end
 
@@ -106,28 +127,32 @@ def display_player_greeting(player_name)
   puts
 end
 
-def display_round_results(round_winner, winning_weapon, round_loser,
-                          losing_weapon, jerrybot_color)
-
+def display_round_results(
+  round_winner,
+  winning_weapon,
+  round_loser,
+  losing_weapon,
+  jerrybot_color
+)
   round_winner = jerrybot_color if round_winner == 'JerryBot'
 
-  puts "#{round_winner}'s #{winning_weapon.capitalize} "\
-       "#{determine_attack_style(winning_weapon, losing_weapon)} "\
-       "#{round_loser}'s #{losing_weapon.capitalize}!!!"
+  puts "#{round_winner}'s #{winning_weapon.capitalize} " \
+         "#{determine_attack_style(winning_weapon, losing_weapon)} " \
+         "#{round_loser}'s #{losing_weapon.capitalize}!!!"
   puts
   puts "#{round_winner} wins this round!"
   puts
 end
 
 def display_score(score, player)
-  puts "The score so far is:"
-  puts "#{player}: #{score[player]}  #{'JerryBot'.colorize(:light_red)}: "\
-       "#{score['JerryBot']}  Ties: #{score['tie']}"
-  puts "---------------------------------------------------------------------"
+  puts 'The score so far is:'
+  puts "#{player}: #{score[player]}  #{'JerryBot'.colorize(:light_red)}: " \
+         "#{score['JerryBot']}  Ties: #{score['tie']}"
+  puts '---------------------------------------------------------------------'
   puts
   print "Press the enter key to goto the next round#{INPUT_PROMPT}"
   gets
-  clear_screen()
+  clear_screen
 end
 
 def display_tie
@@ -136,8 +161,12 @@ def display_tie
   puts
 end
 
-def display_weapon_choices(player_name, player_weapon, jerrybot_color,
-                           jerrybot_weapon)
+def display_weapon_choices(
+  player_name,
+  player_weapon,
+  jerrybot_color,
+  jerrybot_weapon
+)
   puts
   puts "#{player_name} chooses: #{player_weapon.capitalize}!"
   puts "#{jerrybot_color} chooses: #{jerrybot_weapon.capitalize}!"
@@ -157,7 +186,7 @@ end
 def get_player_weapon_choice
   player_choice = ''
   loop do
-    display_choices_prompt()
+    display_choices_prompt
     player_choice = gets.chomp.downcase.strip
     break if valid_input?(player_choice, ATTACKS.keys, ABBREVIATIONS.keys)
     puts "That's not a valid choice. Choose again."
@@ -170,7 +199,7 @@ def get_player_weapon_choice
 end
 
 def play_again?
-  display_play_again_prompt()
+  display_play_again_prompt
 
   user_choice = ''
   loop do
@@ -194,9 +223,7 @@ def show_rules?
     print "Invalid input. Please enter yes or no.#{INPUT_PROMPT}"
   end
 
-  if user_input == 'y' || user_input == 'yes'
-    display_intro_text()
-  end
+  display_intro_text if user_input == 'y' || user_input == 'yes'
 end
 
 def someone_won?(player_name, score)
@@ -213,32 +240,41 @@ player_name = ''
 jerrybot_color = 'JerryBot'.colorize(:light_red)
 
 loop do
-  clear_screen()
-  display_intro_graphic()
-  show_rules?()
+  clear_screen
+  display_intro_graphic
+  show_rules?
 
-  if first_run 
-    player_name = get_player_name()
+  if first_run
+    player_name = get_player_name
     display_player_greeting(player_name)
   end
-  
+
   score = { player_name => 0, 'JerryBot' => 0, 'tie' => 0 }
   until someone_won?(player_name, score)
-    player_weapon = get_player_weapon_choice()
-    jerrybot_weapon = get_jerrybot_weapon_choice()
+    player_weapon = get_player_weapon_choice
+    jerrybot_weapon = get_jerrybot_weapon_choice
 
     round_winner, winning_weapon, round_loser, losing_weapon =
       calculate_round_winner(player_name, player_weapon, jerrybot_weapon)
 
     score[round_winner] += 1
-    display_weapon_choices(player_name, player_weapon, jerrybot_color,
-                           jerrybot_weapon)
+    display_weapon_choices(
+      player_name,
+      player_weapon,
+      jerrybot_color,
+      jerrybot_weapon,
+    )
 
     if round_winner == 'tie'
-      display_tie()
+      display_tie
     else
-      display_round_results(round_winner, winning_weapon, round_loser,
-                            losing_weapon, jerrybot_color)
+      display_round_results(
+        round_winner,
+        winning_weapon,
+        round_loser,
+        losing_weapon,
+        jerrybot_color,
+      )
     end
 
     display_score(score, player_name)
@@ -248,7 +284,7 @@ loop do
   display_grand_champion(grand_champion, jerrybot_color, player_name)
 
   first_run = false
-  break unless play_again?()
+  break unless play_again?
 end
 
-display_outro()
+display_outro

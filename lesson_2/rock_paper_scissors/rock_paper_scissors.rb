@@ -2,7 +2,7 @@
 
 # ask the user to make a choice
 
-VALID_CHOICES = %w(rock paper scissors)
+VALID_CHOICES = %w[rock paper scissors]
 
 def win?(first, second)
   (first == 'rock' && second == 'scissors') ||
@@ -12,9 +12,9 @@ end
 
 def display_results(player, computer)
   if win?(player, computer)
-    prompt("You won!")
+    prompt('You won!')
   elsif win?(computer, player)
-    prompt("You lose!")
+    prompt('You lose!')
   else
     prompt("It's a draw!")
   end
@@ -43,9 +43,9 @@ loop do
 
   display_results(choice, computer_choice)
 
-  prompt("Do you want to play again?")
+  prompt('Do you want to play again?')
   answer = gets.chomp
   break unless answer.downcase.start_with?('y')
 end
 
-prompt("Thank you for playing. Goodbye!")
+prompt('Thank you for playing. Goodbye!')
