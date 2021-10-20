@@ -210,7 +210,7 @@ end
 
 def display_thinking_animation(choice)
   print 'The computer is thinking'
-  5.times do |_|
+  5.times do
     print '.'
     sleep 0.6
   end
