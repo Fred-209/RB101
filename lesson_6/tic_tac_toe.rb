@@ -51,9 +51,11 @@ end
 
 def computer_takes_turn(board, available_squares, symbol, turn_history)
   square_choice = available_squares.sample
-  display_thinking_animation(square_choice)
+  display_thinking_animation
+  puts "The computer chose to mark square #{square_choice}!"
   update_turn_history!(turn_history, square_choice)
   update_board!(symbol, square_choice, board, available_squares)
+  display_enter_prompt
 end
 
 def congratulate_winner(winner)
@@ -93,7 +95,7 @@ def display_board(board)
 end
 
 def display_enter_prompt
-  puts 'Press enter to continue:'
+  print "Press enter to continue#{PROMPT}"
   gets
 end
 
@@ -109,14 +111,13 @@ def display_square_choice_prompt(available_squares)
   print PROMPT
 end
 
-def display_thinking_animation(choice)
+def display_thinking_animation
   print 'The computer is thinking'
   5.times do
     print '.'
     sleep 0.6
   end
-  puts "The computer chose to mark square #{choice}!"
-  display_enter_prompt
+  puts
 end
 
 def display_tie_game
@@ -165,9 +166,10 @@ end
 
 def player_takes_turn(board, available_squares, symbol, turn_history)
   square_choice = choose_square_to_mark(available_squares).to_i
+  puts "You chose to mark square #{square_choice}!"
+  puts
   update_turn_history!(turn_history, square_choice)
   update_board!(symbol, square_choice, board, available_squares)
-  puts "You chose to mark square #{square_choice}!"
 end
 
 def tie_game?(available_squares)
