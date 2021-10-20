@@ -28,7 +28,7 @@
 # 9. If yes, go to #1
 # 10. Goodbye!
 
-# is_winner? - Determine if the current board is a winning board
+# is_have_a_winner? - Determine if the current board is a winning board
 #   - A winning board has three x's or three o's in a row
 #   - Winning square combos:
 #       - 123/321, 147/741, 159/951, 258/852, 369/963, 357/753, 456/654, 789/987
@@ -283,7 +283,7 @@ def valid_square_choice?(choice, available_squares)
   available_squares.include?(choice)
 end
 
-def winner?(move_history)
+def have_a_winner?(move_history)
   WINNING_SQUARE_COMBOS.any? { |combo| (combo.difference(move_history)).empty? }
 end
 
@@ -338,7 +338,6 @@ loop do
   player_turn_history = []
   computer_turn_history = []
   winner = nil
-  tie = nil
 
   clear_screen
   display_welcome
@@ -354,13 +353,8 @@ loop do
       player_turn_history,
     )
     display_board(board)
-    if winner?(player_turn_history)
-      winner = 'Player'
-      break
-    elsif tie_game?(available_squares)
-      tie = true
-      break
-    end
+    winner = 'Player' if have_a_winner?(player_turn_history)
+    break if winner || tie_game?(available_squares)
 
     computer_takes_turn(
       board,
@@ -369,13 +363,8 @@ loop do
       computer_turn_history,
     )
     display_board(board)
-    if winner?(computer_turn_history)
-      winner = 'Computer'
-      break
-    elsif tie_game?(available_squares)
-      tie = true
-      break
-    end
+    winner = 'Computer' if have_a_winner?(computer_turn_history)
+    break if winner || tie_game?(available_squares)
   end
 
   winner ? congratulate_winner(winner) : display_tie_game
