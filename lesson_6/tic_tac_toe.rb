@@ -2,6 +2,15 @@
 
 # The first player to mark their symbol on three squares that are connected either horizontally, vertically, or diagonally, is the winner.
 
+# Feature - Colorize the board and player/computer symbols
+# - Will use the colorize gem
+# - Decide on board color 
+  #   - yellow
+  # - Create constant variable COLORS that contains 
+  # - Create choose_player_color method to 
+
+require 'colorize'
+
 def assign_symbols
   player_symbol = choose_symbol
 
@@ -72,27 +81,20 @@ end
 
 def display_board(board)
   clear_screen
-  puts 'GAME BOARD'.center(80)
+  puts
+  puts 'GAME BOARD'.center(80).colorize(:light_blue)
   puts ''
   dotted_line = '------+------+------'
 
   puts ''
-  puts "#{board[1][0].join}|#{board[2][0].join}|#{board[3][0].join}".center(80)
-  puts "#{board[1][1].join}|#{board[2][1].join}|#{board[3][1].join}".center(80)
-  puts "#{board[1][2].join}|#{board[2][2].join}|#{board[3][2].join}".center(80)
-  puts "#{board[1][3].join}|#{board[2][3].join}|#{board[3][3].join}".center(80)
+  display_upper_board_lines(board)
   puts dotted_line.center(80)
-  puts "#{board[4][0].join}|#{board[5][0].join}|#{board[6][0].join}".center(80)
-  puts "#{board[4][1].join}|#{board[5][1].join}|#{board[6][1].join}".center(80)
-  puts "#{board[4][2].join}|#{board[5][2].join}|#{board[6][2].join}".center(80)
-  puts "#{board[4][3].join}|#{board[5][3].join}|#{board[6][3].join}".center(80)
+  display_middle_board_lines(board)
   puts dotted_line.center(80)
-  puts "#{board[7][0].join}|#{board[8][0].join}|#{board[9][0].join}".center(80)
-  puts "#{board[7][1].join}|#{board[8][1].join}|#{board[9][1].join}".center(80)
-  puts "#{board[7][2].join}|#{board[8][2].join}|#{board[9][2].join}".center(80)
-  puts "#{board[7][3].join}|#{board[8][3].join}|#{board[9][3].join}".center(80)
+  display_lower_board_lines(board)
   puts ''
 end
+
 
 def display_enter_prompt
   print "Press enter to continue#{PROMPT}"
@@ -101,6 +103,20 @@ end
 
 def display_goodbye_message
   puts 'Thanks for Playing! Goodbye!!'
+end
+
+def display_lower_board_lines(board)
+  puts "#{board[7][0].join}|#{board[8][0].join}|#{board[9][0].join}".center(80)
+  puts "#{board[7][1].join}|#{board[8][1].join}|#{board[9][1].join}".center(80)
+  puts "#{board[7][2].join}|#{board[8][2].join}|#{board[9][2].join}".center(80)
+  puts "#{board[7][3].join}|#{board[8][3].join}|#{board[9][3].join}".center(80)
+end
+
+def display_middle_board_lines(board)
+  puts "#{board[4][0].join}|#{board[5][0].join}|#{board[6][0].join}".center(80)
+  puts "#{board[4][1].join}|#{board[5][1].join}|#{board[6][1].join}".center(80)
+  puts "#{board[4][2].join}|#{board[5][2].join}|#{board[6][2].join}".center(80)
+  puts "#{board[4][3].join}|#{board[5][3].join}|#{board[6][3].join}".center(80)
 end
 
 def display_square_choice_prompt(available_squares)
@@ -122,6 +138,13 @@ end
 
 def display_tie_game
   puts "Looks like it's a tie game! Noone wins, but at least noone lost, eh?"
+end
+
+def display_upper_board_lines(board)
+  puts "#{board[1][0].join}|#{board[2][0].join}|#{board[3][0].join}".center(80)
+  puts "#{board[1][1].join}|#{board[2][1].join}|#{board[3][1].join}".center(80)
+  puts "#{board[1][2].join}|#{board[2][2].join}|#{board[3][2].join}".center(80)
+  puts "#{board[1][3].join}|#{board[2][3].join}|#{board[3][3].join}".center(80)
 end
 
 def display_welcome
