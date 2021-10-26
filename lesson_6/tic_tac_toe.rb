@@ -37,18 +37,6 @@ O_SQUARE = [
   [' ', ' ', ' ', ' ', ' ', ' ', ' ']
 ]
 
-
-BOARD_ICON = <<-ICON
-  SQUARES GUIDE
-  
-     1  |  2  |  3  
-  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-     4  |  5  |  6  
-  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ 
-     7  |  8  |  9   
-  
-  ICON
-
 PROMPT = ' => '
 
 def ask_player_for_symbol_choice
@@ -140,6 +128,24 @@ def choose_board_size
 board_size
 end
 
+def choose_computer_options
+  options = {}
+  options[:color] = :cyan
+  options[:symbol] = choose_symbol
+  options
+end
+
+def choose_player_color
+  [:blue, :green, :magenta].sample
+end
+
+def choose_player_options
+  options = {}
+  options[:color] = choose_player_color
+  options[:symbol] = choose_symbol
+  options
+end
+
 def choose_square_to_mark(available_squares)
   display_square_choice_prompt(available_squares)
 
@@ -161,19 +167,19 @@ def choose_symbol
   symbol = ask_player_for_symbol_choice
   puts "You chose to be #{symbol.upcase}'s."
   display_enter_prompt
-  symbol
+  symbol == 'x' ? X_SQUARE : O_SQUARE
 end
 
 def clear_screen
   system('clear')
 end
 
-def computer_takes_turn(board,symbol, turn_history)
+def computer_takes_turn(board,computer_options, turn_history)
   square_choice = board[:parameters][:available_squares].sample
   display_thinking_animation
   puts "The computer chose to mark square #{square_choice}!"
   update_turn_history!(turn_history, square_choice)
-  update_board!(symbol, square_choice, board)
+  update_board!(computer_options, square_choice, board)
   display_enter_prompt
 end
 
@@ -224,35 +230,31 @@ end
 def display_board(board)
   board_grid = board[:layout]
   number_of_rows = board[:parameters][:size]
-  row_separator = '-------+'
-  row_separator_last_square = '-------'
+  row_separator = '-------'.colorize(:yellow) + '+'.colorize(:red)
+  row_separator_last_square = '-------'.colorize(:yellow)
   number_of_squares_per_row = board[:parameters][:size]
   
   first_square_in_row = 1
   last_square_in_row = board[:parameters][:size]
-  # middle_squares_range = ((board_grid.keys[0] + 1)..(board_grid.keys[number_of_squares_per_row -1] -1)).to_a
+  
   
   number_of_rows.times do 
     line_number = 0
-    # middle_squares_range = ((board_grid.keys[0] + 1)..(board_grid.keys[number_of_squares_per_row -1] -1)).to_a
+    
     middle_squares_range = ((first_square_in_row + 1)...last_square_in_row)
+
     until line_number > 6
-      # puts "line number #{line_number}"
-      temp_line = board_grid[first_square_in_row][line_number].join + '|'
-      #print '|'
-      # print temp_line.center(80)
+      temp_line = board_grid[first_square_in_row][line_number].join + '|'.colorize(:yellow)
       middle_squares_range.each do |square_number|
-        temp_line += board_grid[square_number][line_number].join + '|'
-        # print '|'
-        # print temp_line.center(80)
-      end
+      temp_line += board_grid[square_number][line_number].join + '|'.colorize(:yellow)
+    end
       temp_line += board_grid[last_square_in_row][line_number].join
-      print temp_line.center(160)
+      print temp_line
       puts
-      # gets
       line_number += 1
     end
-    puts ((row_separator * (number_of_squares_per_row - 1)) + row_separator_last_square).center(160) unless last_square_in_row == board[:parameters][:total_squares]
+
+    puts ((row_separator * (number_of_squares_per_row - 1)) + row_separator_last_square) unless last_square_in_row == board[:parameters][:total_squares]
     first_square_in_row += number_of_squares_per_row
     last_square_in_row += number_of_squares_per_row
 
@@ -307,7 +309,7 @@ def display_middle_board_lines(board)
 end
 
 def display_square_choice_prompt(available_squares)
-  puts "#{BOARD_ICON}Which square do you want to mark?"
+  puts "Which square do you want to mark?"
   puts ''
   puts 'Enter a number from one of the available square choices left'
   display_available_squares(available_squares)
@@ -345,7 +347,6 @@ def display_welcome_message
   puts 'In order to choose which square you want, you will type in the ' \
          'number from this handy guide below that corresponds to your square:'
   puts ''
-  puts BOARD_ICON
   puts
   puts
 end
@@ -369,20 +370,27 @@ def play_again?
   choice.downcase == 'y'
 end
 
-def player_takes_turn(board, symbol, turn_history)
+def player_takes_turn(board, player_options, turn_history)
   square_choice = choose_square_to_mark(board[:parameters][:available_squares])
   puts "You chose to mark square #{square_choice}!"
   puts
   update_turn_history!(turn_history, square_choice)
-  update_board!(symbol, square_choice, board)
+  update_board!(player_options, square_choice, board)
 end
 
 def tie_game?(available_squares)
   available_squares.empty?
 end
 
-def update_board!(symbol, square, board)
-  board[:layout][square] = symbol
+def update_board!(options, square, board)
+  p options
+  p options[:symbol]
+  gets
+  board[:layout][square] = options[:symbol].map do |row|
+    row.map do |character|
+      character.colorize(options[:color])
+    end
+  end
   board[:parameters][:available_squares].delete(square)
 end
 
@@ -401,17 +409,19 @@ loop do
   has_seen_welcome_screen = true
 
   board = initialize_board
+  player_options = choose_player_options
+  computer_options = choose_computer_options
   player_turn_history = []
   computer_turn_history = []
   winner = nil
 
-  player_symbol, computer_symbol = assign_symbols
+  
   display_board(board)
 
   loop do
     player_takes_turn(
       board,
-      player_symbol,
+      player_options,
       player_turn_history
     )
     display_board(board)
@@ -420,7 +430,7 @@ loop do
 
     computer_takes_turn(
       board,
-      computer_symbol,
+      computer_options,
       computer_turn_history
     )
     display_board(board)
