@@ -21,8 +21,8 @@ COMPUTER_OPPONENTS = {
   Bobby: {
     name: 'Bobby',
     colors: {
-      name_color: :green,
-      symbol_color: :green
+      name_color: :light_green,
+      symbol_color: :light_green
     },
     difficulty: 1
   },
@@ -39,6 +39,22 @@ COMPUTER_OPPONENTS = {
     colors: {
       name_color: :light_cyan,
       symbol_color: :light_cyan
+    },
+    difficulty: 3
+  },
+  Ryuk: {
+    name: 'Ryuk',
+    colors: {
+      name_color: :light_yellow,
+      symbol_color: :light_yellow
+    },
+    difficulty: 2
+  },
+  Player_456: {
+    name: 'Player_456',
+    colors: {
+      name_color: :light_white,
+      symbol_color: :light_white
     },
     difficulty: 3
   }
@@ -110,7 +126,9 @@ DEFAULT_PLAYER_DATA = {
     colors: {
       name_color: '',
       symbol_color: ''
-    }
+    },
+    turn_history: [],
+    winner: false
   },
   player_2: {
     name: '',
@@ -119,7 +137,9 @@ DEFAULT_PLAYER_DATA = {
     colors: {
       name_color: '',
       symbol_color: ''
-    }
+    },
+    turn_history: [],
+    winner: false
   },
   player_3: {
     name: '',
@@ -128,7 +148,9 @@ DEFAULT_PLAYER_DATA = {
     colors: {
       name_color: '',
       symbol_color: ''
-    }
+    },
+    turn_history: [],
+    winner: false
   },
   player_4: {
     name: '',
@@ -137,7 +159,9 @@ DEFAULT_PLAYER_DATA = {
     colors: {
       name_color: '',
       symbol_color: ''
-    }
+    },
+    turn_history: [],
+    winner: false
   },
   player_5: {
     name: '',
@@ -146,76 +170,43 @@ DEFAULT_PLAYER_DATA = {
     colors: {
       name_color: '',
       symbol_color: ''
-    }
+    },
+    turn_history: [],
+    winner: false
   }
 }
 
 PROMPT = ' => '
 
 def assign_computer_player_data!(player, player_data)
-  available_computer_opponents_strings =
-    player_data[:available_computer_opponents].map(&:to_s)
+  computer_opponent = choose_computer_opponent(player, player_data)
+  player_data[:available_computer_opponents].delete(computer_opponent)
 
-  puts "#{player.capitalize} will be a computer opponent."
-  puts 'Do you want to choose the opponent or have it randomly picked for you?'
-  puts "Available computer opponents left are [#{available_computer_opponents_strings.join(', ')}:#{PROMPT}"
-  print "Type 'C' to (C)hoose an opponent or 'R' to have it (R)andomly assigned:#{PROMPT}"
-
-  choose_or_random = nil
-  loop do
-    choose_or_random = gets.chomp
-    break if choose_or_random =~ /\A[cr]\z/i
-    puts 'Invalid selection. Try again.'
-    print "Type 'R' or 'C':#{PROMPT}"
-  end
-
-  if choose_or_random.upcase == 'R'
-    opponent_choice =
-      choose_random_opponent(available_computer_opponents_strings)
-  else
-    opponent_choice =
-      choose_opponent_manually(available_computer_opponents_strings)
-  end
-
-  opponent_choice = opponent_choice.to_sym
-  player_data[:available_computer_opponents].delete(opponent_choice)
-  player_data[player][:name] = opponent_choice
+  player_data[player][:name] = computer_opponent.to_s
   player_data[player][:colors][:name_color] =
-    COMPUTER_OPPONENTS[opponent_choice][:colors][:name_color]
+    COMPUTER_OPPONENTS[computer_opponent][:colors][:name_color]
+
   player_data[player][:colors][:symbol_color] =
-    COMPUTER_OPPONENTS[opponent_choice][:colors][:symbol_color]
+    COMPUTER_OPPONENTS[computer_opponent][:colors][:symbol_color]
+
   player_data[player][:symbol_marker] =
     choose_random_symbol_marker(player_data[:available_symbol_markers])
+
   player_data[:available_symbol_markers].delete(
     SYMBOL_MARKERS_MAP.key(player_data[player][:symbol_marker])
   )
-  
 end
 
 def assign_human_player_data!(player, player_data)
   print "What's the name of #{player}?:#{PROMPT}"
   player_data[player][:name] = gets.chomp
-end
-
-def ask_player_for_symbol_choice
-  symbol = nil
-  puts ''
-  puts "In this version of the game, you don't have to choose only between being an X or an O."
-  puts 'This expanded version lets you choose between the usual X or O, but also a Square, Triangle'
-  puts 'or Plus sign shape as your board marker.'
-  puts 'Choose from the menu:'
-  puts "- 'X' or X marker"
-  puts "- 'O' for O marker"
-  puts "- 'S' for a square marker"
-  puts "- 'T' for a triangle marker"
-  puts "- 'P' for a plus sign marker"
-  print "[X O S T P]#{PROMPT}"
-  loop do
-    symbol = gets.chomp
-    break if symbol =~ /\A[xostp]\z/i
-    print "You have to type either X,O,S,T, or P. Try again#{PROMPT}"
-  end
-  symbol
+  player_data[player][:symbol_marker] = choose_symbol_marker!(player_data)
+  player_data[:available_symbol_markers].delete(
+    player_data[player][:symbol_marker]
+  )
+  player_colors = choose_player_colors(player)
+  player_data[player][:colors][:name_color] = player_colors[0]
+  player_data[player][:colors][:symbol_color] = player_colors[1]
 end
 
 def assign_board_parameters
@@ -268,22 +259,22 @@ def choose_board_colors
 end
 
 def choose_board_size
-  board_size = nil
-
-  puts 'Please choose what size of player board you want.'
-  puts 'Enter a single number and the board will be a grid of that size.'
-  puts 'Example: If you want a 3x3 board, type 3. A 9x9 board, type 9.'
-  puts '3x3 is the minimum board size, 20x20 is the max.'
-  puts ''
-  puts "Enter your board size choice [3 - 20]:#{PROMPT}"
-  loop do
-    board_size = gets.chomp
-    break if (3..20).include?(board_size.to_i)
-    puts "That's not a valid board size."
-    print "Please enter a number between 3 and 20:#{PROMPT}"
-  end
-
+  valid_board_sizes = (3..20).to_a.map(&:to_s)
+  display_board_size_message
+  board_size = get_validated_input(valid_board_sizes)
   board_size
+end
+
+def choose_computer_opponent(player, player_data)
+  computer_opponents_list =
+    player_data[:available_computer_opponents].map(&:to_s)
+
+  if randomly_choose_computer_opponent?(player, computer_opponents_list)
+    computer_opponent = choose_random_opponent(computer_opponents_list)
+  else
+    computer_opponent = choose_opponent_manually(computer_opponents_list)
+  end
+  computer_opponent.to_sym
 end
 
 def choose_computer_options
@@ -294,25 +285,22 @@ def choose_computer_options
 end
 
 def choose_human_or_computer(player)
+  valid_input = %w[h c]
+
+  clear_screen
   puts "Do you want #{player} to be a human or computer player?"
   print "Type 'H' for human or 'C' for computer:#{PROMPT}"
+  human_or_computer_choice = get_validated_input(valid_input)
+  puts
 
-  choice = nil
-  loop do
-    choice = gets.chomp
-    break if choice =~ /\A[hc]\z/i
-    puts 'Not a valid choice'
-    print "Enter either 'H' or 'C':#{PROMPT}"
-  end
-
-  choice.downcase == 'c' ? 'computer' : 'human'
+  human_or_computer_choice.downcase == 'c' ? 'computer' : 'human'
 end
 
 def choose_number_of_players
   puts 'Choose the total number of players (including computer opponents).'
   puts 'This can be anywhere from 2 to 5 players.'
   puts "It's recommended to choose a number at least 1 smaller than your board size."
-  print "How many players? Enter 2, 3, 4, or 5:#{PROMPT}"
+  print "How many players? Enter [2, 3, 4, or 5]:#{PROMPT}"
 
   number_of_players = nil
   loop do
@@ -321,45 +309,55 @@ def choose_number_of_players
     puts "That's not a valid choice."
     print "Enter 2, 3, 4, or 5:#{PROMPT}"
   end
+  puts
   number_of_players.to_i
 end
 
-def choose_player_color
-  %i[blue green magenta].sample
-end
-
-def choose_opponent_manually(available_opponents)
+def choose_opponent_manually(computer_opponents_list)
   puts 'You chose to manually pick your opponent.'
   puts 'The computer opponents have different levels of difficulty.'
-  puts 'Bobby is the easiest, Hans is the toughest, and Maude is in the middle.'
+  puts 'Bobby is the easiest, Maude and Ryuk are medium difficulty,'
+  puts 'And Hans and Player_456 are the strongest.'
   puts 'Who do you choose?'
-  puts "Your options are: [#{available_opponents.join(', ')}]"
+  puts "Your options are: [#{computer_opponents_list.join(', ')}]"
   print "Type in their name exactly as spelled:#{PROMPT}"
 
-  opponent = nil
+  computer_opponent = nil
   loop do
-    opponent = gets.chomp.capitalize
-    break if available_opponents.include?(opponent)
+    computer_opponent = gets.chomp.capitalize
+    break if computer_opponents_list.include?(computer_opponent)
     puts 'Not a valid choice. Try again.'
-    print "Type one of these choices [#{available_opponents.join(', ')}]"
+    print "Type one of these choices [#{computer_opponents_list.join(', ')}]"
   end
 
-  puts "You chose #{opponent}!"
-  opponent
+  puts "You chose #{computer_opponent}!"
+  computer_opponent
 end
 
-def choose_random_opponent(computer_opponents)
+def choose_player_colors(player)
+  available_colors = %w[blue red cyan magenta yellow white]
+  puts 'What color do you want your symbol marker to be?'
+  puts "Available choices are: [#{available_colors.join(', ')}]"
+  print "Enter your choice: #{PROMPT}"
+  color_choice = get_validated_input(available_colors)
+  puts "You chose #{color_choice} as your name and symbol marker color."
+  pause_screen
+  [color_choice.to_sym, color_choice.to_sym]
+end
+
+def choose_random_opponent(computer_opponents_list)
   puts 'You chose to randomly pick a computer opponent.'
-  puts "The options are #{computer_opponents.join(', ')}"
-  opponent = computer_opponents.sample
-  display_thinking_animation('Randomly choosing', 0.2)
-  puts "Looks like #{opponent} was chosen!"
-  opponent
+  computer_opponent = computer_opponents_list.sample
+  display_thinking_animation('Randomly choosing', 0.3)
+  puts "Looks like #{computer_opponent} was chosen!"
+  puts
+  computer_opponent
 end
 
 def choose_random_symbol_marker(available_markers)
   marker = available_markers.sample
-  puts "Their chosen symbol is the #{marker}!"
+  puts "They chose #{marker.capitalize} as their symbol marker!"
+  pause_screen
   SYMBOL_MARKERS_MAP[marker]
 end
 
@@ -376,14 +374,19 @@ def choose_square_to_mark(available_squares)
     print PROMPT
   end
   puts "You chose to mark square #{player_square_choice}!"
-  display_enter_prompt
+  pause_screen
   player_square_choice.to_i
 end
 
-def choose_symbol
-  symbol = ask_player_for_symbol_choice
-  puts "You chose to be #{symbol.upcase}'s."
-  display_enter_prompt
+def choose_symbol_marker!(player_data)
+  available_symbol_markers = player_data[:available_symbol_markers]
+  display_symbol_marker_choice_message(available_symbol_markers)
+  symbol = get_validated_input(available_symbol_markers)
+  player_data[:available_symbol_markers].delete(symbol)
+
+  puts "You chose #{symbol.capitalize} as your symbol marker."
+  pause_screen
+
   case symbol.upcase
   when 'T'
     return TRI_MARKER
@@ -408,7 +411,7 @@ def computer_takes_turn(board, computer_options, turn_history)
   puts "The computer chose to mark square #{square_choice}!"
   update_turn_history!(turn_history, square_choice)
   update_board!(computer_options, square_choice, board)
-  display_enter_prompt
+  pause_screen
 end
 
 def congratulate_winner(winner)
@@ -494,9 +497,13 @@ def display_board(board)
   end
 end
 
-def display_enter_prompt
-  print "Press enter to continue#{PROMPT}"
-  gets
+def display_board_size_message
+  puts 'Please choose what size of player board you want.'
+  puts 'Enter a single number and the board will be a grid of that size.'
+  puts 'Example: If you want a 3x3 board, type 3. A 9x9 board, type 9.'
+  puts '3x3 is the minimum board size, 20x20 is the max.'
+  puts ''
+  puts "Enter your board size choice [3 - 20]:#{PROMPT}"
 end
 
 def display_goodbye_message
@@ -511,12 +518,29 @@ def display_square_choice_prompt(available_squares)
   print PROMPT
 end
 
+def display_symbol_marker_choice_message(available_symbols)
+  puts ''
+  puts "In this version of the game, you don't have to choose only between being an X or an O."
+  puts 'This expanded version lets you choose between the usual X or O, but also a Square, Triangle'
+  puts 'or Plus sign shape as your board marker.'
+  puts 'Choose from the menu:'
+  puts "- 'X' for X marker"
+  puts "- 'O' for O marker"
+  puts "- 'Square' for a square marker"
+  puts "- 'Triangle' for a triangle marker"
+  puts "- 'Plus_sign' for a plus sign marker"
+  puts 'Some symbols may have already been chosen by another player.'
+  puts "The available symbols are:[#{available_symbols.join(', ')}]"
+  print "Please enter your choice: #{PROMPT}"
+end
+
 def display_thinking_animation(phrase, wait_time)
   print phrase
   5.times do
     print '.'
     sleep wait_time
   end
+  puts
   puts
 end
 
@@ -539,11 +563,27 @@ def display_welcome_message
   puts
 end
 
+def get_validated_input(valid_input)
+  user_input = ''
+  loop do
+    user_input = gets.chomp
+    break if valid_input.include?(user_input.downcase)
+    puts "That's not a valid choice."
+    print "Choose one of the following: [#{valid_input.join(', ')}]#{PROMPT}"
+  end
+  user_input
+end
+
 def initialize_board
   parameters = assign_board_parameters
   layout = create_board_layout(parameters[:total_squares])
 
   { parameters: parameters, layout: layout }
+end
+
+def pause_screen
+  print "Press enter to continue#{PROMPT}"
+  gets
 end
 
 def play_again?
@@ -566,6 +606,24 @@ def player_takes_turn(board, player_options, turn_history)
   update_board!(player_options, square_choice, board)
 end
 
+def randomly_choose_computer_opponent?(player, computer_opponents_list)
+  puts
+  puts "#{player.capitalize} will be a computer opponent."
+  puts "Available computer opponents left are [#{computer_opponents_list.join(', ')}]"
+  puts
+  puts 'Do you want to choose the opponent or have it randomly picked for you?'
+  print "Type 'C' to (C)hoose an opponent or 'R' to have it (R)andomly assigned:#{PROMPT}"
+
+  choose_or_random = nil
+  loop do
+    choose_or_random = gets.chomp
+    break if choose_or_random =~ /\A[cr]\z/i
+    puts 'Invalid selection. Try again.'
+    print "Type 'R' or 'C':#{PROMPT}"
+  end
+  choose_or_random.downcase == 'r' ? true : false
+end
+
 def set_player_data_defaults
   player_data = DEFAULT_PLAYER_DATA
 
@@ -585,7 +643,7 @@ def setup_player_data
   player_data = set_player_data_defaults
   default_player_list = %i[player_1 player_2 player_3 player_4 player_5]
   number_of_players = choose_number_of_players
-  player_data[:active_players] = default_player_list.first(number_of_players)
+  player_data[:active_players] = default_player_list.take(number_of_players)
 
   player_data[:active_players].each do |player|
     player_data[player][:human_or_computer] = choose_human_or_computer(player)
@@ -598,10 +656,6 @@ def setup_player_data
   end
 
   player_data
-  # options = {}
-  # options[:color] = choose_player_color
-  # options[:symbol] = choose_symbol
-  # options
 end
 
 def tie_game?(available_squares)
@@ -626,16 +680,16 @@ end
 
 has_seen_welcome_screen = false
 loop do
-  # clear_screen
-  # display_welcome_message unless has_seen_welcome_screen
-  # has_seen_welcome_screen = true
+  clear_screen
+  display_welcome_message unless has_seen_welcome_screen
+  has_seen_welcome_screen = true
 
   board = initialize_board
   player_data = setup_player_data
   binding.pry
-  computer_options = choose_computer_options
-  player_turn_history = []
-  computer_turn_history = []
+
+  # player_turn_history = []
+  # computer_turn_history = []
   winner = nil
 
   display_board(board)
