@@ -80,7 +80,7 @@ O_MARKER = [
   [' ', ' ', ' ', ' ', ' ', ' ', ' ']
 ]
 
-TRI_MARKER = [
+TRIANGLE_MARKER = [
   [' ', ' ', ' ', ' ', ' ', ' ', ' '],
   [' ', ' ', ' ', '∆', ' ', ' ', ' '],
   [' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -113,7 +113,7 @@ PLUS_MARKER = [
 SYMBOL_MARKERS_MAP = {
   'x' => X_MARKER,
   'o' => O_MARKER,
-  'triangle' => TRI_MARKER,
+  'triangle' => TRIANGLE_MARKER,
   'square' => SQUARE_MARKER,
   'plus_sign' => PLUS_MARKER
 }
@@ -128,7 +128,6 @@ DEFAULT_PLAYER_DATA = {
       symbol_color: ''
     },
     turn_history: [],
-    current_winner: false,
     wins: 0
   },
   player_2: {
@@ -140,7 +139,6 @@ DEFAULT_PLAYER_DATA = {
       symbol_color: ''
     },
     turn_history: [],
-    current_winner: false,
     wins: 0
   },
   player_3: {
@@ -152,7 +150,6 @@ DEFAULT_PLAYER_DATA = {
       symbol_color: ''
     },
     turn_history: [],
-    current_winner: false,
     wins: 0
   },
   player_4: {
@@ -164,7 +161,6 @@ DEFAULT_PLAYER_DATA = {
       symbol_color: ''
     },
     turn_history: [],
-    current_winner: false,
     wins: 0
   },
   player_5: {
@@ -176,12 +172,22 @@ DEFAULT_PLAYER_DATA = {
       symbol_color: ''
     },
     turn_history: [],
-    current_winner: false,
     wins: 0
   }
 }
 
 PROMPT = ' => '
+
+def assign_board_parameters
+  parameters = {}
+  parameters[:size] = choose_board_size.to_i
+  parameters[:colors] = choose_board_colors
+  parameters[:winning_combos] =
+    determine_winning_square_combos(parameters[:size])
+  parameters[:total_squares] = parameters[:size]**2
+  parameters[:available_squares] = (1..parameters[:size]**2).to_a
+  parameters
+end
 
 def assign_computer_player_data!(player, player_data)
   computer_opponent = choose_computer_opponent(player, player_data).capitalize
@@ -209,20 +215,9 @@ def assign_human_player_data!(player, player_data)
   player_data[:available_symbol_markers].delete(
     player_data[player][:symbol_marker]
   )
-  player_colors = choose_player_colors(player)
+  player_colors = choose_player_colors(player_data[player][:name])
   player_data[player][:colors][:name_color] = player_colors[0]
   player_data[player][:colors][:symbol_color] = player_colors[1]
-end
-
-def assign_board_parameters
-  parameters = {}
-  parameters[:size] = choose_board_size.to_i
-  parameters[:colors] = choose_board_colors
-  parameters[:winning_combos] =
-    determine_winning_square_combos(parameters[:size])
-  parameters[:total_squares] = parameters[:size]**2
-  parameters[:available_squares] = (1..parameters[:size]**2).to_a
-  parameters
 end
 
 def calculate_horizontal_winning_combos(board_size)
@@ -277,7 +272,8 @@ def choose_computer_opponent(player, player_data)
   if randomly_choose_computer_opponent?(player, computer_opponents_list)
     computer_opponent = choose_random_opponent(computer_opponents_list)
   else
-    computer_opponent = choose_opponent_manually(computer_opponents_list)
+    computer_opponent =
+      choose_computer_opponent_manually(computer_opponents_list)
   end
   computer_opponent.to_sym
 end
@@ -307,8 +303,7 @@ def choose_number_of_players
   number_of_players.to_i
 end
 
-def choose_opponent_manually(computer_opponents_list)
-  
+def choose_computer_opponent_manually(computer_opponents_list)
   puts 'You chose to manually pick your opponent.'
   puts 'The computer opponents have different levels of difficulty.'
   puts 'Bobby is the easiest, Maude and Ryuk are medium difficulty,'
@@ -321,13 +316,13 @@ def choose_opponent_manually(computer_opponents_list)
   computer_opponent
 end
 
-def choose_player_colors(player)
+def choose_player_colors(player_name)
   available_colors = %w[blue red cyan magenta yellow white]
   puts 'What color do you want your symbol marker to be?'
   puts "Available choices are: [#{available_colors.join(', ')}]"
   print "Enter your choice: #{PROMPT}"
   color_choice = get_validated_input(available_colors)
-  puts "You chose #{color_choice} as your name and symbol marker color."
+  puts "#{player_name} chose #{color_choice} as their name and symbol marker color."
   pause_screen
   [color_choice.to_sym, color_choice.to_sym]
 end
@@ -348,41 +343,26 @@ def choose_random_symbol_marker(available_markers)
   SYMBOL_MARKERS_MAP[marker]
 end
 
-def choose_square_to_mark(board, player)
-  valid_squares = board[:parameters][:available_squares].map(&:to_s)
-  player_name = player[:name].colorize(player[:colors][:name_color])
-  display_board(board)
-  puts "Look at the board above and choose a square number."
-  print "Which square do you want to mark? #{PROMPT}"
-  
-  player_square_choice = get_validated_input(valid_squares)
-    
-  puts "#{player_name} chose to mark square #{player_square_choice}!"
-  pause_screen
-  
-  player_square_choice.to_i
-end
-
 def choose_symbol_marker!(player_data)
   available_symbol_markers = player_data[:available_symbol_markers]
   display_symbol_marker_choice_message(available_symbol_markers)
   symbol = get_validated_input(available_symbol_markers)
   player_data[:available_symbol_markers].delete(symbol)
-
+  
   puts "You chose #{symbol.capitalize} as your symbol marker."
   pause_screen
 
-  case symbol.upcase
-  when 'T'
-    return TRI_MARKER
-  when 'X'
-    return X_MARKER
-  when 'P'
-    return PLUS_MARKER
-  when 'O'
-    return O_MARKER
-  else
-    return SQUARE_MARKER
+  case symbol
+  when 'triangle'
+    TRIANGLE_MARKER
+  when 'x'
+    X_MARKER
+  when 'plus_sign'
+    PLUS_MARKER
+  when 'o'
+    O_MARKER
+  when 'square'
+    SQUARE_MARKER
   end
 end
 
@@ -390,32 +370,38 @@ def clear_screen
   system('clear')
 end
 
-def computer_player_takes_a_turn(board, player)
+def computer_player_chooses_square(board, player)
   available_squares = board[:parameters][:available_squares]
+  available_squares.sample
+end
+
+def computer_player_takes_a_turn(board, player)
   turn_history = player[:turn_history]
   player_name = player[:name].colorize(player[:colors][:name_color])
-  display_board(board)
-  square_choice = available_squares.sample
-  display_thinking_animation("#{player_name} is thinking", 0.3)
-  puts "#{player_name} chose to mark square #{square_choice}!"
+  square_choice = computer_player_chooses_square(board, player)
   update_turn_history!(turn_history, square_choice)
   update_board!(player, square_choice, board)
+  display_thinking_animation("#{player_name} is thinking", 0.3)
+  display_board(board)
+  puts "#{player_name} chose to mark square #{square_choice}!"
   pause_screen
 end
 
-def congratulate_winner(winner)
-  if winner == 'Player'
-    puts "Congratulations!! You Won! You're the Tic-Tac-Toe Champ!"
-  else
-    puts 'Looks like the computer won this game. Try again and show'
-    " it who's boss!"
-  end
+def congratulate_winner(winner, player_data)
+  player_name = player_data[winner][:name]
+  player_color = player_data[winner][:colors][:name_color]
+
+  puts "Congratulations #{player_name.colorize(player_color)}!"
+  puts "You won this round!"
 end
 
 def create_board_layout(total_number_of_squares)
   empty_board_layout =
     (1..total_number_of_squares).each_with_object({}) do |square, square_grid|
       square_grid[square] = []
+
+      # 1 digit, 2, digit, and 3 digit square numbers effect the terminal
+      # screen layout differently
       7.times do
         if square < 10
           square_grid[square].push([' ', ' ', ' ', ' ', ' ', ' ', ' '])
@@ -432,6 +418,10 @@ def create_board_layout(total_number_of_squares)
     labeled_board_layout[square][3][3] = square
   end
   labeled_board_layout
+end
+
+def current_player_has_won?(move_history, winning_combos)
+  winning_combos.any? { |combo| (combo.difference(move_history)).empty? }
 end
 
 def determine_winning_square_combos(board_size)
@@ -509,8 +499,10 @@ end
 
 def display_symbol_marker_choice_message(available_symbols)
   puts ''
-  puts "In this version of the game, you don't have to choose only between being an X or an O."
-  puts 'This expanded version lets you choose between the usual X or O, but also a Square, Triangle'
+  puts "In this version of the game, you don't have to choose only between"
+  puts 'being an X or an O.'
+  puts 'This expanded version lets you choose between the usual X or O,'
+  puts 'but also a Square, Triangle'
   puts 'or Plus sign shape as your board marker.'
   puts 'Choose from the menu:'
   puts "- 'X' for X marker"
@@ -543,10 +535,10 @@ def display_welcome_message
   puts 'Welcome to Tic Tac Toe!'
   puts ''
   puts "This classic game of X's and O's will pit you against a computer " \
-  'opponent.'
+         'opponent.'
   puts 'The game board is made up of a 3x3 grid of squares.'
   puts 'In order to choose which square you want, you will type in the ' \
-  'number from this handy guide below that corresponds to your square:'
+         'number from this handy guide below that corresponds to your square:'
   puts ''
   puts
   puts
@@ -556,34 +548,51 @@ def get_validated_input(valid_input)
   user_input = ''
   loop do
     user_input = gets.chomp
-    until !user_input.strip.empty? do
+    until !user_input.strip.empty?
       puts "Your input can't be only blank spaces."
-      puts  "Please try again: #{PROMPT}"
+      puts "Please try again: #{PROMPT}"
       user_input = gets.chomp
     end
-    
-    break if valid_input.any? { |valid_string| valid_string.casecmp?(user_input)} || valid_input.empty?
-    # break if valid_input.map(&:downcase).include?(user_input.downcase) || valid_input.empty?
+
+    if valid_input.any? { |valid_string| valid_string.casecmp?(user_input) } ||
+                                         valid_input.empty?
+      break
+    end
+
     puts "That's not a valid choice."
     print "Choose one of the following: [#{valid_input.join(', ')}]#{PROMPT}"
   end
   user_input
 end
 
-def human_player_takes_a_turn(board, player)
-  available_squares = board[:parameters][:available_squares]
-  turn_history = player[:turn_history]
-  square_choice = choose_square_to_mark(board, player)
-  update_turn_history!(turn_history, square_choice)
-  update_board!(player, square_choice, board)
+def human_player_chooses_square(board, player_name)
+  valid_squares = board[:parameters][:available_squares].map(&:to_s)
+
+  display_board(board)
+  puts 'Look at the board above and choose a square number.'
+  print "Which square do you want to mark, #{player_name}? #{PROMPT}"
+
+  get_validated_input(valid_squares).to_i
 end
 
-def initialize_board
-  parameters = assign_board_parameters
-  layout = create_board_layout(parameters[:total_squares])
+def human_player_takes_a_turn(board, player)
+  available_squares = board[:parameters][:available_squares]
+  player_name = player[:name].colorize(player[:colors][:name_color])
+  turn_history = player[:turn_history]
+  square_choice = human_player_chooses_square(board, player_name)
 
+  update_turn_history!(turn_history,square_choice)
+  update_board!(player, square_choice, board)
 
-  { parameters: parameters, layout: layout, tied_game: false }
+  clear_screen
+  display_board(board)
+  puts "#{player_name} chose to mark square #{square_choice}!"
+  pause_screen
+end
+
+def joinor(square_list, delimiter = ', ', conjunction = 'or')
+  last_square = square_list.pop
+  square_list.join(delimiter) + " #{conjunction} #{last_square}"
 end
 
 def pause_screen
@@ -591,29 +600,29 @@ def pause_screen
   gets
 end
 
-def play_again?
-  
-  print "Do you want to play again? #{PROMPT}"
-  valid_input = %w[y n]
-  choice = get_validated_input()
-  choice.downcase == 'y'
-end
-
-def play_a_game_round(board, player_data)
+def play_a_round(board, player_data)
   active_players = player_data[:active_players]
   available_squares = board[:parameters][:available_squares]
   clear_screen
 
-  until we_have_a_winner?(active_players, player_data) || tie_game?(available_squares) do
-    active_players.each do |player|
-      if player_data[player][:human_or_computer] == 'human' 
-        human_player_takes_a_turn(board, player_data[player])
+  until board[:round_winner] || board[:tied_game]
+    # until we_have_a_winner?(active_players, player_data) ||
+    #       tie_game?(available_squares)
+    active_players.each do |current_player|
+      
+      if player_data[current_player][:human_or_computer] == 'human'
+        human_player_takes_a_turn(board, player_data[current_player])
       else
-        computer_player_takes_a_turn(board, player_data[player])
+        computer_player_takes_a_turn(board, player_data[current_player])
       end
-     
-      if current_player_has_won?(player_data[player][:turn_history], board[:parameters][:winning_combos])
-        update_player_win_record!(player_data, player)
+
+      if current_player_has_won?(
+        player_data[current_player][:turn_history],
+        board[:parameters][:winning_combos]
+      )
+        
+        set_round_winner!(board, current_player)
+        update_player_win_record!(player_data, current_player)
         break
       elsif tie_game?(available_squares)
         board[:tied_game] = true
@@ -621,12 +630,14 @@ def play_a_game_round(board, player_data)
       end
     end
   end
+  display_board(board)
 end
 
-
-def current_player_has_won?(move_history, winning_combos)
-  
-  winning_combos.any? { |combo| (combo.difference(move_history)).empty? }
+def play_again?
+  print "Do you want to play again? #{PROMPT}"
+  valid_input = %w[y n]
+  choice = get_validated_input(valid_input)
+  choice.downcase == 'y'
 end
 
 def randomly_choose_computer_opponent?(player, computer_opponents_list)
@@ -635,7 +646,8 @@ def randomly_choose_computer_opponent?(player, computer_opponents_list)
   puts "Available computer opponents left are [#{computer_opponents_list.join(', ')}]"
   puts
   puts 'Do you want to choose the opponent or have it randomly picked for you?'
-  print "Type 'C' to (C)hoose an opponent or 'R' to have it (R)andomly assigned:#{PROMPT}"
+  print "Type 'C' to (C)hoose an opponent or 'R' to have it (R)andomly assigned"
+  print ":#{PROMPT}"
 
   choose_or_random = nil
   loop do
@@ -644,12 +656,12 @@ def randomly_choose_computer_opponent?(player, computer_opponents_list)
     puts 'Invalid selection. Try again.'
     print "Type 'R' or 'C':#{PROMPT}"
   end
-  choose_or_random.downcase == 'r' ? true : false
+  choose_or_random.downcase == 'r'
 end
 
 def set_player_data_defaults
   player_data = DEFAULT_PLAYER_DATA
-  
+
   player_data[:available_computer_opponents] = COMPUTER_OPPONENTS.keys
   player_data[:available_symbol_markers] = %w[x o triangle square plus_sign]
   player_data[:available_colors] = %i[
@@ -662,6 +674,18 @@ def set_player_data_defaults
   player_data
 end
 
+def set_round_winner!(board, player)
+  board[:round_winner] = player
+end
+
+def setup_board
+  parameters = assign_board_parameters
+  layout = create_board_layout(parameters[:total_squares])
+  round_winner = nil
+  tied_game = false
+  { parameters: parameters, layout: layout, round_winner: round_winner, tied_game: tied_game}
+end
+
 def setup_player_data
   player_data = set_player_data_defaults
   default_player_list = %i[player_1 player_2 player_3 player_4 player_5]
@@ -671,7 +695,7 @@ def setup_player_data
   player_data[:active_players].each do |player|
     player_data[player][:human_or_computer] = choose_human_or_computer(player)
     if player_data[player][:human_or_computer] == 'computer' &&
-         !player_data[:available_computer_opponents].empty?
+       !player_data[:available_computer_opponents].empty?
       assign_computer_player_data!(player, player_data)
     else
       assign_human_player_data!(player, player_data)
@@ -702,39 +726,25 @@ def update_turn_history!(turn_history, turn)
   turn_history << turn
 end
 
-def we_have_a_winner?(players, player_data)
-  binding.pry
-  players.any? { |player| player_data[player][:current_winner] == true}
-end
-
 has_seen_welcome_screen = false
 loop do
   clear_screen
   display_welcome_message unless has_seen_welcome_screen
   has_seen_welcome_screen = true
 
-  board = initialize_board
+  board = setup_board
   player_data = setup_player_data
   
-  play_a_game_round(board, player_data)
+  play_a_round(board, player_data)
+  round_winner = board[:round_winner]
   
-  congratulate_winner('eddy') if we_have_a_winner?(player_data[:active_players], player_data)
-  display_tie_game_message if tie_game?(board[:available_squares])
-
+  if round_winner
+    congratulate_winner(round_winner, player_data)
+  else
+    display_tie_game_message
+  end
+  
   break unless play_again?
-  # break if winner || tie_game?(board[:parameters][:available_squares])
-
-  #   computer_takes_turn(board, computer_options, computer_turn_history)
-  #   display_board(board)
-  #   winner = 'Computer' if won?(
-  #     computer_turn_history,
-  #     board[:parameters][:winning_combos]
-  #   )
-  #   break if winner || tie_game?(board[:parameters][:available_squares])
-  # end
-
-  # winner ? congratulate_winner(winner) : display_tie_game_message
-  # break unless play_again?
 end
 
 display_goodbye_message
