@@ -1,21 +1,4 @@
-# Tic Tac Toe is a game played by two players in which each players alternate
-# turns marking squares on a board with their chosen symbol, either a circle
-# or an X.
-
-# The first player to mark their symbol on three squares that are connected
-# either
-# horizontally, vertically, or diagonally, is the winner.
-
-# Feature - Colorize the board and player/computer symbols
-# - Will use the colorize gem
-
-# - Decide on board color
-#   - yellow
-# - Create constant variable COLORS that contains
-# - Create choose_player_color method to
-
 require 'colorize'
-require 'pry'
 
 COMPUTER_OPPONENTS = {
   Bobby: {
@@ -120,52 +103,44 @@ SYMBOL_MARKERS_MAP = {
 
 PROMPT = ' => '
 
-def assign_board_parameters
+def all_players_are_computers?(player_data)
+  active_players = player_data[:active_players]
+  active_players.all? do |player|
+    player_data[player][:human_or_computer] == 'computer'
+  end
+end
+
+def assign_initial_board_parameters
   parameters = {}
   parameters[:size] = choose_board_size.to_i
-  parameters[:colors] = choose_board_colors
   parameters[:winning_combos] =
     determine_winning_square_combos(parameters[:size])
   parameters[:total_squares] = parameters[:size]**2
-  parameters[:available_squares] = (1..parameters[:size]**2).to_a
+  parameters[:available_squares] = (1..parameters[:total_squares]).to_a
+  parameters[:max_players] =
+    calculate_max_players_for_board_size(parameters[:size])
   parameters
 end
 
-def assign_computer_player_data!(player, player_data)
-  computer_opponent = choose_computer_opponent(player, player_data).capitalize
+def assign_computer_player_data!(player_slot, player_data)
+  computer_opponent =
+    choose_computer_opponent(player_slot, player_data).capitalize
   player_data[:available_computer_opponents].delete(computer_opponent)
 
-  player_data[player][:name] = computer_opponent.to_s
-  player_data[player][:colors][:name_color] =
-    COMPUTER_OPPONENTS[computer_opponent][:colors][:name_color]
-
-  player_data[player][:colors][:symbol_color] =
-    COMPUTER_OPPONENTS[computer_opponent][:colors][:symbol_color]
-
-  player_data[player][:symbol_marker] =
-    choose_random_symbol_marker(player_data[:available_symbol_markers])
-
-  player_data[:available_symbol_markers].delete(
-    SYMBOL_MARKERS_MAP.key(player_data[player][:symbol_marker])
-  )
+  set_player_name!(player_slot, player_data, computer_opponent)
+  set_player_colors!(player_slot, player_data, computer_opponent)
+  set_player_symbol!(player_slot, player_data, computer_opponent)
 end
 
-def assign_human_player_data!(player, player_data)
-  print "What's the name of #{player}?:#{PROMPT}"
-  player_data[player][:name] = get_validated_input([])
-  player_data[player][:symbol_marker] = choose_symbol_marker!(player_data)
-  player_data[:available_symbol_markers].delete(
-    player_data[player][:symbol_marker]
-  )
-  player_colors = choose_player_colors(player_data[player][:name])
-  player_data[player][:colors][:name_color] = player_colors[0]
-  player_data[player][:colors][:symbol_color] = player_colors[1]
+def assign_human_player_data!(player_slot, player_data)
+  set_player_name!(player_slot, player_data)
+  set_player_colors!(player_slot, player_data)
+  set_player_symbol!(player_slot, player_data)
 end
 
 def calculate_horizontal_winning_combos(board_size)
   winning_combos = []
   first_square = 1
-  # last_square = first_square + board_size - 1
   last_square = board_size
 
   until last_square > board_size**2
@@ -184,6 +159,21 @@ def calculate_diagonal_winning_combos(board_size)
   [left_to_right_diagonal, right_to_left_diagonal]
 end
 
+def calculate_max_players_for_board_size(board_size)
+  max_players =
+    case board_size
+    when 3, 4
+      2
+    when 5..7
+      3
+    when 8, 9
+      4
+    else
+      5
+    end
+  max_players
+end
+
 def calculate_vertical_winning_combos(board_size)
   winning_combos = []
   first_square = 1
@@ -198,36 +188,30 @@ def calculate_vertical_winning_combos(board_size)
 end
 
 def check_for_winner_or_tie(board, current_player_slot, player_data)
-
   if current_player_has_won?(
-    player_data[current_player_slot][:turn_history],
-    board[:parameters][:winning_combos]
-  )
-    set_round_winner!(board, current_player_slot, player_data)
-    increment_player_round_wins!(player_data, current_player_slot)
-    
-    
+       player_data[current_player_slot][:turn_history],
+       board[:parameters][:winning_combos]
+     )
+    set_round_winner!(board, current_player_slot)
+    increment_player_score!(player_data, current_player_slot)
   elsif tie_game?(player_data[:active_players], player_data)
     board[:tied_game] = true
-    
   end
-
 end
 
-
-def choose_closest_completed_combo(current_player_slot, player_data)
+def choose_closest_completed_combo_if_exists(current_player_slot, player_data)
   viable_combos = player_data[current_player_slot][:winning_combos_still_viable]
-  closest_completed_combo = viable_combos.min_by { |combo| combo.size }
-end
-
-def choose_board_colors
-  'red'
+  closest_completed_combo = viable_combos.min_by(&:size)
+  closest_completed_combo
 end
 
 def choose_board_size
   valid_board_sizes = (3..10).to_a.map(&:to_s)
   display_board_size_message
   board_size = get_validated_input(valid_board_sizes)
+  puts ''
+  puts "You chose a #{board_size}x#{board_size} board size."
+  pause_screen
   board_size
 end
 
@@ -256,13 +240,36 @@ def choose_human_or_computer(player)
   human_or_computer_choice.downcase == 'c' ? 'computer' : 'human'
 end
 
-def choose_number_of_players
-  allowed_number_of_players = %w[2 3 4 5]
+def choose_middle_or_corner_square(board)
+  available_squares = board[:parameters][:available_squares]
 
-  puts 'Choose the total number of players (including computer opponents).'
-  puts 'This can be anywhere from 2 to 5 players.'
-  puts "It's recommended to choose a number at least 1 smaller than your board size."
-  print "How many players? Enter [2, 3, 4, or 5]:#{PROMPT}"
+  middle_square = (board[:parameters][:total_squares] / 2) + 1
+  corner_squares = get_corner_squares(board)
+
+  if available_squares.include?(middle_square)
+    middle_square
+  elsif available_squares.any? { |square| corner_squares.include?(square) }
+    common_squares = (available_squares & corner_squares)
+    random_square_choice(common_squares)
+  else
+    random_square_choice(available_squares)
+  end
+end
+
+def get_corner_squares(board)
+  nw_corner_square = 1
+  ne_corner_square = board[:parameters][:size]
+  sw_corner_square =
+    board[:parameters][:total_squares] - board[:parameters][:size]
+  se_corner_square = board[:parameters][:total_squares]
+  [nw_corner_square, ne_corner_square, sw_corner_square, se_corner_square]
+end
+
+def choose_number_of_players(board)
+  max_players = board[:parameters][:max_players]
+  allowed_number_of_players = (2..max_players).to_a.map(&:to_s)
+
+  display_choose_number_of_players_messages(max_players)
   number_of_players = get_validated_input(allowed_number_of_players)
   puts "#{number_of_players} players will be playing this time!"
   pause_screen
@@ -273,7 +280,7 @@ def choose_computer_opponent_manually(computer_opponents_list)
   puts 'You chose to manually pick your opponent.'
   puts 'The computer opponents have different levels of difficulty.'
   puts 'Bobby is the easiest, Maude and Ryuk are medium difficulty,'
-  puts 'And Hans and Player_456 are the strongest.'
+  puts 'And Hans and Player 456 are the strongest.'
   puts 'Who do you choose?'
   puts "Your options are: [#{computer_opponents_list.join(', ')}]"
   print "Type in their name exactly as spelled:#{PROMPT}"
@@ -282,43 +289,83 @@ def choose_computer_opponent_manually(computer_opponents_list)
   computer_opponent
 end
 
-def choose_level_1_ai_square(board)
-  random_square_choice(board[:parameters][:available_squares])
+def choose_level_1_ai_square(board, player_slot, player_data)
+  available_squares = board[:parameters][:available_squares]
+  intelligence_score = rand(11)
+  random_available_square = random_square_choice(available_squares)
+
+  if intelligence_score > 8
+    winning_square =
+      get_other_players_winning_squares_if_exist(
+        board,
+        player_slot,
+        player_data
+      )
+  end
+
+  winning_square || random_available_square
 end
 
 def choose_level_2_ai_square(board, player_slot, player_data)
+  available_squares = board[:parameters][:available_squares]
   intelligence_score = rand(11)
-  random_available_square = board[:parameters][:available_squares].sample
+  random_available_square = random_square_choice(available_squares)
+  possible_winning_square =
+    get_other_players_winning_squares_if_exist(board, player_slot, player_data)
+  player_turn_history = player_data[player_slot][:turn_history]
 
-  if intelligence_score > 7
-    winning_square = get_other_players_winning_squares_if_exist(board, player_slot, player_data)
+  if player_turn_history.empty?
+    choose_middle_or_corner_square(board)
+  elsif intelligence_score > 7 && possible_winning_square
+    possible_winning_square
+  else
+    random_available_square
   end
-
-  winning_square ? winning_square : random_available_square
 end
 
 def choose_level_3_ai_square(board, player_slot, player_data)
+  intelligence_score = rand(11)
   available_squares = board[:parameters][:available_squares]
+  random_available_square = random_square_choice(available_squares)
+
   turn_history = player_data[player_slot][:turn_history]
-
-  return random_square_choice(available_squares) if turn_history.empty?
-
-  closest_winning_combo = choose_closest_completed_combo(player_slot, player_data)
-  number_of_squares_to_win = 
+  closest_winning_combo =
+    choose_closest_completed_combo_if_exists(player_slot, player_data)
+  number_of_squares_needed_to_win =
     closest_winning_combo ? closest_winning_combo.size : 0
-  
-  if number_of_squares_to_win == 1
-    winning_square = closest_winning_combo.first
-  else
-    winning_square = get_other_players_winning_squares_if_exist(board, player_slot, player_data)
-  end
+  another_players_winning_square =
+    get_other_players_winning_squares_if_exist(board, player_slot, player_data)
 
-  return winning_square if winning_square
+  choose_best_square_option(
+    intelligence_score,
+    turn_history,
+    number_of_squares_needed_to_win,
+    closest_winning_combo,
+    another_players_winning_square,
+    random_available_square
+  )
+end
 
-  if closest_winning_combo
+def choose_best_square_option(
+  intelligence_score,
+  turn_history,
+  number_of_squares_needed_to_win,
+  closest_winning_combo,
+  another_players_winning_square,
+  random_available_square
+)
+  if intelligence_score < 3
+    random_available_square
+  elsif turn_history.empty?
+    choose_middle_or_corner_square(board)
+  elsif number_of_squares_needed_to_win == 1
+    closest_winning_combo.first
+  elsif another_players_winning_square
+    another_players_winning_square
+  elsif closest_winning_combo
     random_square_choice(closest_winning_combo)
   else
-    random_square_choice(available_squares)
+    random_available_square
   end
 end
 
@@ -335,23 +382,22 @@ end
 
 def choose_player_turn_order!(player_data)
   active_players = player_data[:active_players]
-  
+
   turn_order_selection = get_turn_order_selection(active_players, player_data)
   player_data[:active_players] = turn_order_selection
-  print "The turn order will be "
+  puts ''
+  print 'The turn order will be '
 
   turn_order_selection.each do |player|
     print "#{player_data[player][:name].colorize(player_data[player][:colors][:name_color])} "
   end
-  puts ''
-  gets
+  pause_screen
 end
-
 
 def choose_who_goes_first(active_players, player_data)
   number_of_players = active_players.size
   active_players.each_with_index do |player, idx|
-    puts "#{idx +1}. #{player_data[player][:name]}"
+    puts "#{idx + 1}. #{player_data[player][:name]}"
   end
 
   puts "Choose [#{(1...number_of_players).to_a.join(', ')} or #{number_of_players}]: #{PROMPT}"
@@ -375,6 +421,26 @@ def choose_random_symbol_marker(available_markers)
   SYMBOL_MARKERS_MAP[marker]
 end
 
+def choose_single_game_or_series!(board)
+  display_single_game_or_series_choice_messages
+
+  single_game_or_series_choice = get_validated_input(%w[1 2])
+  if single_game_or_series_choice == '1'
+    puts 'You chose to play a single game.'
+    pause_screen
+  else
+    display_choose_number_of_points_to_win_messages
+    points_to_win = get_validated_input((2..10).to_a.map(&:to_s))
+
+    puts ''
+    puts "You chose to play until someone has scored #{points_to_win} points."
+    pause_screen
+
+    board[:play_a_series] = true
+    board[:points_to_win] = points_to_win.to_i
+  end
+end
+
 def choose_symbol_marker!(player_data)
   available_symbol_markers = player_data[:available_symbol_markers]
   display_symbol_marker_choice_message(available_symbol_markers)
@@ -383,7 +449,10 @@ def choose_symbol_marker!(player_data)
 
   puts "You chose #{symbol.capitalize} as your symbol marker."
   pause_screen
+  match_symbol_choice_to_symbol_layout(symbol)
+end
 
+def match_symbol_choice_to_symbol_layout(symbol)
   case symbol
   when 'triangle'
     TRIANGLE_MARKER
@@ -408,7 +477,7 @@ def computer_player_chooses_square(board, player_slot, player, player_data)
   square_choice =
     case ai_difficulty_level
     when 1
-      choose_level_1_ai_square(board)
+      choose_level_1_ai_square(board, player_slot, player_data)
     when 2
       choose_level_2_ai_square(board, player_slot, player_data)
     when 3
@@ -422,33 +491,40 @@ def computer_player_takes_a_turn(board, player_slot, player_data)
   player = player_data[player_slot]
   turn_history = player[:turn_history]
   player_name = player[:name].colorize(player[:colors][:name_color])
+  speed_game = board[:speed_game]
 
   square_choice =
     computer_player_chooses_square(board, player_slot, player, player_data)
   update_turn_history!(turn_history, square_choice)
   update_board!(player, square_choice, board)
   update_squares_list_in_viable_combos!(player_slot, player_data, square_choice)
-  display_thinking_animation("#{player_name} is thinking", 0.1)
-  display_board(board)
-  puts "#{player_name} chose to mark square #{square_choice}!"
-  pause_screen
+
+  unless speed_game
+    display_thinking_animation("#{player_name} is thinking", 0.2)
+    display_board(board)
+    puts "#{player_name} chose to mark square #{square_choice}!"
+    pause_screen
+  end
 end
 
 def congratulate_winner(winner, player_data)
   player_name = player_data[winner][:name]
   player_color = player_data[winner][:colors][:name_color]
 
+  puts ''
   puts "Congratulations #{player_name.colorize(player_color)}!"
-  puts 'You won this round!'
+  puts 'You won the game!'
+  puts ''
 end
 
-def create_board_layout(total_number_of_squares)
+def create_empty_board_layout(total_number_of_squares)
   empty_board_layout =
     (1..total_number_of_squares).each_with_object({}) do |square, square_grid|
       square_grid[square] = []
 
-      # 1 digit, 2, digit, and 3 digit square numbers effect the terminal
-      # screen layout differently
+      # 1 digit, 2 digit, and 3 digit square numbers effect the terminal
+      # screen layout display differently. This is the reason for a different
+      # number of elements and blank ' ' spaces, depending on number of squares
       7.times do
         if square < 10
           square_grid[square].push([' ', ' ', ' ', ' ', ' ', ' ', ' '])
@@ -471,8 +547,6 @@ def current_player_has_won?(turn_history, winning_combos)
   winning_combos.any? { |combo| (combo.difference(turn_history)).empty? }
 end
 
-
-
 def determine_winning_square_combos(board_size)
   horizontal_combos = calculate_horizontal_winning_combos(board_size)
   vertical_combos = calculate_vertical_winning_combos(board_size)
@@ -481,59 +555,159 @@ def determine_winning_square_combos(board_size)
   horizontal_combos + vertical_combos + diagonal_combos
 end
 
+def display_all_lines_in_a_row_of_squares(
+  board_grid,
+  first_square_in_row,
+  last_square_in_row
+)
+  # middle squares are all squares in a row except the first and last square
+  line_number = 0
+  middle_squares_range = ((first_square_in_row + 1)...last_square_in_row)
+  until line_number > 6
+    temp_line =
+      board_grid[first_square_in_row][line_number].join + '|'.colorize(:yellow)
+    middle_squares_range.each do |square_number|
+      temp_line +=
+        board_grid[square_number][line_number].join + '|'.colorize(:yellow)
+    end
+    temp_line += board_grid[last_square_in_row][line_number].join
+    print temp_line
+    puts
+    line_number += 1
+  end
+end
+
+def display_all_players_series_points_score(player_data)
+  player_data[:active_players].each do |player|
+    name_color = player_data[player][:colors][:name_color]
+    puts "#{player_data[player][:name].colorize(name_color)}: #{player_data[player][:points_scored]}"
+  end
+end
+
 def display_board(board)
+  # The board is a grid layout of X by X squares where X is the size of the board
+  # chosen. Each square consists of a 7x7 grid of character spaces.
+  # A row is defined as a horizontal row of these squares
+  # A line is defined as a single row of character spaces that stretch from
+  # the first square in a row to the last square in a row
+
   board_grid = board[:layout]
   number_of_rows = board[:parameters][:size]
-  row_separator = '-------'.colorize(:yellow) + '+'.colorize(:red)
-  row_separator_last_square = '-------'.colorize(:yellow)
   number_of_squares_per_row = board[:parameters][:size]
-
   first_square_in_row = 1
   last_square_in_row = board[:parameters][:size]
 
   clear_screen
   number_of_rows.times do
-    line_number = 0
-
-    middle_squares_range = ((first_square_in_row + 1)...last_square_in_row)
-    until line_number > 6
-      temp_line =
-        board_grid[first_square_in_row][line_number].join +
-          '|'.colorize(:yellow)
-      middle_squares_range.each do |square_number|
-        temp_line +=
-          board_grid[square_number][line_number].join + '|'.colorize(:yellow)
-      end
-      temp_line += board_grid[last_square_in_row][line_number].join
-      print temp_line
-      puts
-      line_number += 1
-    end
-
-    unless last_square_in_row == board[:parameters][:total_squares]
-      puts (
-             (row_separator * (number_of_squares_per_row - 1)) +
-               row_separator_last_square
-           )
+    display_all_lines_in_a_row_of_squares(
+      board_grid,
+      first_square_in_row,
+      last_square_in_row
+    )
+    unless last_row_of_squares?(board, last_square_in_row)
+      display_row_separator(number_of_squares_per_row)
     end
     first_square_in_row += number_of_squares_per_row
     last_square_in_row += number_of_squares_per_row
   end
 end
 
+def display_row_separator(number_of_squares_per_row)
+  row_separator = '-------'.colorize(:yellow) + '+'.colorize(:red)
+  row_separator_last_square = '-------'.colorize(:yellow)
+
+  puts (
+         (row_separator * (number_of_squares_per_row - 1)) +
+           row_separator_last_square
+       )
+end
+
+def last_row_of_squares?(board, last_square_in_row)
+  last_square_in_row == board[:parameters][:total_squares]
+end
+
 def display_board_size_message
   puts 'Please choose what size of player board you want.'
   puts 'Enter a single number and the board will be a grid of that size.'
   puts 'Example: If you want a 3x3 board, type 3. A 9x9 board, type 9.'
-  puts '3x3 is the minimum board size, 20x20 is the max.'
+  puts '3x3 is the minimum board size, 10x10 is the max.'
   puts ''
-  puts "Enter your board size choice [3 - 20]:#{PROMPT}"
+  print "Enter your board size choice [3 - 10]:#{PROMPT}"
 end
 
+def display_choose_number_of_players_messages(max_players)
+  clear_screen
+  puts 'Choose the total number of players (including computer opponents).'
+  puts 'This can be anywhere from 2 to 5 players, but the board size dictates'
+  puts 'how many you can choose. '
+  puts 'For board sizes of 3 or 4, max number of players is 2'
+  puts 'For board sizes of between 5 and 7, max players is 3.'
+  puts 'For board sizes of 8 or 9, max players is 4.'
+  puts 'And for a board size of 10, you can have up to 5 players.'
+  puts "Keep in mind if you're running a speed game of computer VS computer matches"
+  puts 'that large boards with longer series of games may take a long time to run.'
+  puts "The max number of players for your chosen board size is #{max_players}."
+  print "Enter the number of players #{PROMPT}"
+end
 
+def display_choose_number_of_points_to_win_messages
+  puts ''
+  puts 'How many points should a player score before being'
+  puts 'declared the winner? Each game win is worth 1 point.'
+  puts 'You can choose any number from 2 through 10'
+  puts ''
+  print "Enter [2, 3, 4, 5, 6, 7, 8 , 9, or 10]: #{PROMPT}"
+end
 
 def display_goodbye_message
+  puts ''
   puts 'Thanks for Playing! Goodbye!!'
+end
+
+def display_non_speed_game_messages(board, player_data)
+  if board[:tied_game]
+    puts 'Looks like a tie this round! Noone scores.' if board[:tied_game]
+  else
+    puts "#{player_data[board[:round_winner]][:name]} won this round!"
+  end
+  display_score_recap_messages(board, player_data)
+end
+
+def display_score_recap_messages(board, player_data)
+  puts "Here's the score so far:"
+  display_all_players_series_points_score(player_data)
+  puts "Tie games: #{board[:tie_game_count]}"
+  pause_screen
+end
+
+def display_speed_game_messages
+  clear_screen
+  puts 'It looks like all the players are computer players.'
+  puts 'Would you like to speed up the game(s)?'
+  puts 'They will battle it out and you will only see the final'
+  puts 'board result if you choose this.'
+  print "Speed game? [y or n]: #{PROMPT}"
+end
+
+def display_single_game_or_series_choice_messages
+  clear_screen
+  puts ''
+  puts 'Do you want to play a single game or a series of games?'
+  puts 'In a series, you play multiple rounds of Tic Tac Toe until'
+  puts 'one player reaches a certain score.'
+  puts ''
+  puts ' 1. Single Game'
+  puts ' 2. Series Of Games'
+  puts ''
+  print "Type 1 or 2: #{PROMPT}"
+end
+
+def display_speed_game_recap(board, player_data, winner_name)
+  puts ''
+  puts "It took #{winner_name} #{board[:rounds_played]} rounds to win!"
+  puts 'Final scores are:'
+  display_all_players_series_points_score(player_data)
+  puts "Tie games: #{board[:tie_game_count]}"
 end
 
 def display_square_choice_prompt(available_squares)
@@ -573,35 +747,40 @@ def display_thinking_animation(phrase, wait_time)
 end
 
 def display_tie_game_message
-  puts "It looks like either there are no empty squares to pick from on the"
+  puts 'It looks like either there are no empty squares to pick from on the'
   puts "board, or it's impossible for anyone to win now because there are"
-  puts "no more winning combinations left for anyone."
-  puts "TIE GAME!!"
-  puts ""
+  puts 'no more winning combinations left for anyone.'
+  puts 'TIE GAME!!'
+  puts ''
 end
 
 def display_turn_order_choices
-  puts "Do you want to keep the default turn order, or change it?"
-  puts "Make your choice from the menu below:"
-  puts "1. Keep the default turn order."
-  puts "2. Shuffle the turn order randomly."
-  puts "3. Choose who goes first."
+  puts 'Do you want to keep the default turn order, or change it?'
+  puts 'Make your choice from the menu below:'
+  puts ''
+  puts '1. Keep the default turn order.'
+  puts '2. Shuffle the turn order randomly.'
+  puts '3. Choose who goes first.'
+  puts ''
   print "Which do you choose [1, 2, or 3]?:#{PROMPT}"
 end
 
-def display_welcome_message
+def display_welcome_screen
   clear_screen
   puts ''
   puts 'Welcome to Tic Tac Toe!'
   puts ''
-  puts "This classic game of X's and O's will pit you against a computer " \
-         'opponent.'
-  puts 'The game board is made up of a 3x3 grid of squares.'
-  puts 'In order to choose which square you want, you will type in the ' \
-         'number from this handy guide below that corresponds to your square:'
-  puts ''
+  puts "This version of the classic game of X's and O's can be played with up to"
+  puts '5 players, and this can be any combination of human or computer players.'
+  puts 'The game board can be the traditional 3x3 grid of squares, or you can'
+  puts 'choose from any grid size from 3x3 up to 10x10.'
   puts
-  puts
+end
+
+def erase_all_players_turn_histories!(player_data)
+  player_data[:active_players].each do |player|
+    player_data[player][:turn_history] = []
+  end
 end
 
 def get_other_players_winning_squares_if_exist(board, player_slot, player_data)
@@ -609,7 +788,22 @@ def get_other_players_winning_squares_if_exist(board, player_slot, player_data)
   winning_combos = board[:parameters][:winning_combos]
   available_squares = board[:parameters][:available_squares]
   active_players = player_data[:active_players]
+  find_game_winning_square(
+    winning_combos,
+    active_players,
+    player_data,
+    current_player_name,
+    available_squares
+  )
+end
 
+def find_game_winning_square(
+  winning_combos,
+  active_players,
+  player_data,
+  current_player_name,
+  available_squares
+)
   winning_combos.each do |combo|
     active_players.each do |player|
       next if player_data[player][:name] == current_player_name
@@ -624,18 +818,20 @@ def get_other_players_winning_squares_if_exist(board, player_slot, player_data)
 end
 
 def get_turn_order_selection(active_players, player_data)
+  clear_screen
   display_turn_order_choices
   turn_order_menu_choice = get_validated_input(%w[1 2 3])
-  turn_order = case turn_order_menu_choice
-               when '1'
-                 active_players
-               when '2' 
-                 active_players.shuffle
-               when '3'
-                 first_player = choose_who_goes_first(active_players, player_data)
-                 other_players = active_players - [first_player]
-                 [first_player] + other_players
-               end 
+  turn_order =
+    case turn_order_menu_choice
+    when '1'
+      active_players
+    when '2'
+      active_players.shuffle
+    when '3'
+      first_player = choose_who_goes_first(active_players, player_data)
+      other_players = active_players - [first_player]
+      [first_player] + other_players
+    end
   turn_order
 end
 
@@ -672,7 +868,6 @@ end
 
 def human_player_takes_a_turn(board, player_slot, player_data)
   player = player_data[player_slot]
-  available_squares = board[:parameters][:available_squares]
   player_name = player[:name].colorize(player[:colors][:name_color])
   turn_history = player[:turn_history]
   square_choice = human_player_chooses_square(board, player_name)
@@ -690,17 +885,27 @@ def increment_player_game_wins!(player_slot, player_data)
   player_data[player_slot][:game_wins] += 1
 end
 
+def increment_player_score!(player_data, player)
+  player_data[player][:points_scored] += 1
+end
 
-def increment_player_round_wins!(player_data, player)
-  player_data[player][:round_wins] += 1
+def offer_speed_game_option!(board)
+  display_speed_game_messages
+  speed_game_choice = get_validated_input(%w[y n])
+  if speed_game_choice == 'y'
+    puts 'You chose to run a speed game(s).'
+    pause_screen
+    board[:speed_game] = true
+  else
+    puts 'You chose not to run a speed game(s).'
+    pause_screen
+  end
 end
 
 def pause_screen
   print "Press enter to continue#{PROMPT}"
   gets
 end
-
-
 
 def play_again?
   print "Do you want to play again? #{PROMPT}"
@@ -709,42 +914,55 @@ def play_again?
   choice.downcase == 'y'
 end
 
-def play_best_of_five(board, player_data)
+def play_a_series_game(board, player_data)
   active_players = player_data[:active_players]
 
-  until board[:game_winner]
+  play_rounds_until_game_winner!(board, player_data)
 
-    until board[:round_winner] || board[:tied_game]
-      active_players.each do |current_player_slot|
-        take_a_turn(board, current_player_slot, player_data)
-        check_for_winner_or_tie(board, current_player_slot, player_data)
-        break if board[:round_winner] || board[:tied_game]
-      end
-    end
-    round_winner = board[:round_winner]
-    puts "#{player_data[round_winner][:name]} won this round"
-    active_players.each {|player| puts "#{player_data[player][:name]}: #{player_data[player][:round_wins]}"}
-    
-    
-    if player_data[round_winner][:round_wins] >= 5
-      set_game_winner!(board, round_winner)
-    end
-    board[:round_winner] = nil
+  winner_name = player_data[board[:game_winner]][:name]
+  puts "#{winner_name} scored #{board[:points_to_win]} points!"
+  if board[:speed_game]
+    display_speed_game_recap(board, player_data, winner_name)
   end
+  pause_screen
 
-  puts 'You won 5 games!'
-  gets
-  increment_player_game_wins!(board[:game_winner], player_data)
-  
+  board[:play_a_series] = false
+  board[:speed_game] = false
+  board[:rounds_played] = 0
+end
+
+def play_rounds_until_game_winner!(board, player_data)
+  clear_screen
+  display_thinking_animation('Calculating winner...', 0.2) if board[:speed_game]
+  until board[:game_winner]
+    play_single_round_until_winner_or_tie!(board, player_data)
+    unless board[:speed_game]
+      display_non_speed_game_messages(board, player_data)
+    end
+    update_board_with_round_results!(board, player_data)
+
+    reset_board_for_new_round!(board)
+    reset_players_turn_histories_and_winning_combos!(board, player_data)
+  end
+end
+
+def play_single_round_until_winner_or_tie!(board, player_data)
+  active_players = player_data[:active_players]
+
+  until board[:round_winner] || board[:tied_game]
+    active_players.each do |current_player_slot|
+      take_a_turn(board, current_player_slot, player_data)
+      check_for_winner_or_tie(board, current_player_slot, player_data)
+      break if board[:round_winner] || board[:tied_game]
+    end
+  end
 end
 
 def play_single_game(board, player_data)
   active_players = player_data[:active_players]
-  # available_squares = board[:parameters][:available_squares]
-  
+
   clear_screen
   until board[:round_winner] || board[:tied_game]
-        
     active_players.each do |current_player_slot|
       take_a_turn(board, current_player_slot, player_data)
       check_for_winner_or_tie(board, current_player_slot, player_data)
@@ -752,10 +970,10 @@ def play_single_game(board, player_data)
     end
   end
 
+  display_board(board)
   return if board[:tied_game]
   set_game_winner!(board, board[:round_winner])
   increment_player_game_wins!(board[:game_winner], player_data)
-  
 end
 
 def randomly_choose_computer_opponent?(player, computer_opponents_list)
@@ -767,13 +985,7 @@ def randomly_choose_computer_opponent?(player, computer_opponents_list)
   print "Type 'C' to (C)hoose an opponent or 'R' to have it (R)andomly assigned"
   print ":#{PROMPT}"
 
-  choose_or_random = nil
-  loop do
-    choose_or_random = gets.chomp
-    break if choose_or_random =~ /\A[cr]\z/i
-    puts 'Invalid selection. Try again.'
-    print "Type 'R' or 'C':#{PROMPT}"
-  end
+  choose_or_random = get_validated_input(%w[c r])
   choose_or_random.downcase == 'r'
 end
 
@@ -781,14 +993,10 @@ def random_square_choice(available_squares)
   available_squares.sample
 end
 
-def remove_unviable_square_combos!(
-  all_active_players,
-  player_data
-)
-  
-  
+def remove_unviable_square_combos!(all_active_players, player_data)
   all_active_players.each do |player_slot|
-    viable_square_combos = player_data[player_slot][:winning_combos_still_viable]
+    viable_square_combos =
+      player_data[player_slot][:winning_combos_still_viable]
     other_players =
       player_data[:active_players].reject do |other_player_slot|
         other_player_slot == player_slot
@@ -799,7 +1007,35 @@ def remove_unviable_square_combos!(
         viable_square_combos.delete(combo) if !(combo & turn_history).empty?
       end
     end
-  end  
+  end
+end
+
+def repopulate_available_board_squares!(board)
+  board[:parameters][:available_squares] =
+    (1..board[:parameters][:total_squares]).to_a
+end
+
+def repopulate_players_winning_combos!(player_data, board)
+  player_data[:active_players].each do |player|
+    player_data[player][:winning_combos_still_viable] =
+      Marshal.load(Marshal.dump(board[:parameters][:winning_combos]))
+  end
+end
+
+def reset_players_turn_histories_and_winning_combos!(board, player_data)
+  erase_all_players_turn_histories!(player_data)
+  repopulate_players_winning_combos!(player_data, board)
+end
+
+def reset_board_for_new_round!(board)
+  repopulate_available_board_squares!(board)
+  board[:layout] = create_empty_board_layout(board[:parameters][:total_squares])
+  board[:round_winner] = nil
+  board[:tied_game] = false
+end
+
+def series_of_games_was_chosen?(board)
+  board[:play_a_series]
 end
 
 def set_player_data_defaults(player_list, winning_combos)
@@ -816,7 +1052,7 @@ def set_player_data_defaults(player_list, winning_combos)
             symbol_color: ''
           },
           turn_history: [],
-          round_wins: 0,
+          points_scored: 0,
           game_wins: 0,
           winning_combos_still_viable:
             Marshal.load(Marshal.dump(winning_combos))
@@ -836,26 +1072,65 @@ def set_player_data_defaults(player_list, winning_combos)
   player_data
 end
 
-def set_round_winner!(board, player_slot, player_data)
+def set_round_winner!(board, player_slot)
   board[:round_winner] = player_slot
-  # player_data[player_slot][:curent_winner] = true
 end
 
 def set_game_winner!(board, player_slot)
   board[:game_winner] = player_slot
 end
 
-def setup_board
-  parameters = assign_board_parameters
-  layout = create_board_layout(parameters[:total_squares])
-  
+def set_player_colors!(player_slot, player_data, computer_opponent = nil)
+  if computer_opponent
+    player_data[player_slot][:colors][:name_color] =
+      COMPUTER_OPPONENTS[computer_opponent][:colors][:name_color]
+
+    player_data[player_slot][:colors][:symbol_color] =
+      COMPUTER_OPPONENTS[computer_opponent][:colors][:symbol_color]
+  else
+    player_colors = choose_player_colors(player_data[player_slot][:name])
+    player_data[player_slot][:colors][:name_color] = player_colors[0]
+    player_data[player_slot][:colors][:symbol_color] = player_colors[1]
+  end
+end
+
+def set_player_name!(player_slot, player_data, computer_opponent = nil)
+  if computer_opponent
+    player_data[player_slot][:name] = computer_opponent.to_s
+  else
+    print "What's the name of #{player_slot}?:#{PROMPT}"
+    player_data[player_slot][:name] = get_validated_input([])
+  end
+end
+
+def set_player_symbol!(player_slot, player_data, computer_opponent = nil)
+  if computer_opponent
+    player_data[player_slot][:symbol_marker] =
+      choose_random_symbol_marker(player_data[:available_symbol_markers])
+  else
+    player_data[player_slot][:symbol_marker] =
+      choose_symbol_marker!(player_data)
+  end
+  player_data[:available_symbol_markers].delete(
+    SYMBOL_MARKERS_MAP.key(player_data[player_slot][:symbol_marker])
+  )
+end
+
+def setup_initial_board
+  parameters = assign_initial_board_parameters
+  layout = create_empty_board_layout(parameters[:total_squares])
+
   {
     parameters: parameters,
     layout: layout,
+    rounds_played: 0,
+    tie_game_count: 0,
     round_winner: nil,
     game_winner: nil,
     tied_game: false,
-    best_of_five: false
+    play_a_series: false,
+    points_to_win: 0,
+    speed_game: false
   }
 end
 
@@ -866,7 +1141,7 @@ def setup_player_data(board)
       default_player_list,
       board[:parameters][:winning_combos]
     )
-  number_of_players = choose_number_of_players
+  number_of_players = choose_number_of_players(board)
   player_data[:active_players] = default_player_list.take(number_of_players)
 
   player_data[:active_players].each do |player|
@@ -883,22 +1158,14 @@ def setup_player_data(board)
 end
 
 def take_a_turn(board, current_player_slot, player_data)
+  display_board(board) unless board[:speed_game]
   if player_data[current_player_slot][:human_or_computer] == 'human'
-    human_player_takes_a_turn(
-      board,
-      current_player_slot,
-      player_data
-    )
+    human_player_takes_a_turn(board, current_player_slot, player_data)
   else
-    computer_player_takes_a_turn(
-      board,
-      current_player_slot,
-      player_data
-    )
+    computer_player_takes_a_turn(board, current_player_slot, player_data)
   end
   remove_unviable_square_combos!(player_data[:active_players], player_data)
 end
-
 
 def tie_game?(players, player_data)
   number_of_players_that_can_still_win = players.size
@@ -919,31 +1186,46 @@ def update_board!(player, square, board)
   board[:parameters][:available_squares].delete(square)
 end
 
-def update_squares_list_in_viable_combos!(player_slot, player_data, square_choice)
+def update_squares_list_in_viable_combos!(
+  player_slot,
+  player_data,
+  square_choice
+)
   player_data[player_slot][:winning_combos_still_viable].each do |combo|
     combo.delete(square_choice)
   end
 end
 
+def update_board_with_round_results!(board, player_data)
+  board[:rounds_played] += 1
+  round_winner = board[:round_winner]
+  board[:tie_game_count] += 1 if board[:tied_game]
 
+  if round_winner &&
+       player_data[round_winner][:points_scored] >= board[:points_to_win]
+    set_game_winner!(board, round_winner)
+    increment_player_game_wins!(board[:game_winner], player_data)
+  end
+end
 
 def update_turn_history!(turn_history, turn)
   turn_history << turn
 end
 
-has_seen_welcome_screen = false
+first_run = true
 loop do
   clear_screen
+  display_welcome_screen if first_run
 
-  has_seen_welcome_screen = true
-
-  board = setup_board
+  board = setup_initial_board
   player_data = setup_player_data(board)
 
   choose_player_turn_order!(player_data)
-  board[:best_of_five] = true
-  if board[:best_of_five]
-    play_best_of_five(board, player_data)
+  choose_single_game_or_series!(board)
+  offer_speed_game_option!(board) if all_players_are_computers?(player_data)
+
+  if series_of_games_was_chosen?(board)
+    play_a_series_game(board, player_data)
   else
     play_single_game(board, player_data)
   end
@@ -956,6 +1238,7 @@ loop do
     display_tie_game_message
   end
 
+  first_run = false
   break unless play_again?
 end
 
