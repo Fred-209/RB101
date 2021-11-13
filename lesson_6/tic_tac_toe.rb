@@ -1,5 +1,4 @@
 require 'colorize'
-require 'pry'
 
 COMPUTER_OPPONENTS = {
   Bobby: {
