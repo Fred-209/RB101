@@ -1,0 +1,17 @@
+get_player_name: 
+  "Please enter your name: "
+
+entered_blank_spaces_only:
+  "Your input can't be only blanks spaces. Try again %s "
+
+invalid_entry: |
+  "Invalid entry. Try again."
+  "Valid choices are [%s] %s "
+
+display_player_hand: |
+  "Your hand is %s, and it has a score of %s"
+
+draw_or_stay: |
+  "Do you want to draw a card or stay your hand?" 
+  "Type 'stay' to stay your hand or 'draw' to draw a card."
+  "Which do you choose? [stay, draw]%s "
