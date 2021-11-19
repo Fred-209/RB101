@@ -1,7 +1,7 @@
 require 'pry'
 require 'yaml'
 
-SUITES = %i[Hearts Spades Diamonds Clubs]
+SUITS = %i[♥ ♠ ♦ ♣]
 
 CARD_VALUES = %w[2 3 4 5 6 7 8 9 10 Jack Queen King Ace].zip(
               [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, [1, 11]]).to_h
@@ -9,14 +9,14 @@ CARD_VALUES = %w[2 3 4 5 6 7 8 9 10 Jack Queen King Ace].zip(
 BEST_POSSIBLE_SCORE = 21
 MESSAGES = YAML.load_file('twenty_one.yml')
 PROMPT = " =>"
-
-
-# initialize deck
+TOP_OF_CARD_GRAPHIC = MESSAGES['top_card_line']
+MID_CARD_GRAPHIC = MESSAGES['mid_card_line']
+BOTTOM_OF_CARD_GRAPHIC = MESSAGES['bottom_card_line']
 
 def initialize_deck 
   deck = {}
-  SUITES.each do |suite|
-    deck[suite] = CARD_VALUES.clone
+  SUITS.each do |suit|
+    deck[suit] = CARD_VALUES.clone
   end
   deck
 end
@@ -65,17 +65,17 @@ def update_participant_stay_status!(player, status)
 end
 
 def get_random_card_from_deck(deck)
-  suite = deck.keys.sample
-  card_name = deck[suite].keys.sample
-  card = [suite, card_name]
+  suit = deck.keys.sample
+  card_name = deck[suit].keys.sample
+  card = [suit, card_name]
   delete_card_from_deck!(deck, card)
   card
 end
 
 def delete_card_from_deck!(deck, card)
-  suite = card[0]
+  suit = card[0]
   card_name = card[1]
-  deck[suite].delete(card_name)
+  deck[suit].delete(card_name)
 end
 
 def add_card_to_participants_hand!(participant, card)
@@ -131,7 +131,9 @@ end
 def display_player_hand(player)
   hand = player[:cards_in_hand]
   hand_score = player[:hand_score]
-  puts MESSAGES['display_player_hand'] % [hand, hand_score]
+  hand_formatted= []
+  hand.each {|suit, value| hand_formatted << value.chr + suit.to_s}
+  puts MESSAGES['display_player_hand'] % [hand_formatted.join(', '), hand_score]
 end
 
 def get_player_name
@@ -158,6 +160,26 @@ def get_validated_input(valid_input_list = '')
   user_input
 end
 
+def display_card_graphics(hand, dealer=false)
+  number_of_cards = hand.size
+  suits_in_hand, values_in_hand = [], []
+  hand.each do |suit, value|
+    suits_in_hand << suit
+    values_in_hand << value.chr
+  end
+  if dealer
+    suits_in_hand[0] = "#"
+    values_in_hand[0] = "#"
+  end
+  puts TOP_OF_CARD_GRAPHIC * number_of_cards
+  puts ("┃" + "%-9.9s" + "┃") * number_of_cards % values_in_hand
+  puts MID_CARD_GRAPHIC * number_of_cards
+  puts ("┃" + "%s".center(10) + "┃") * number_of_cards % suits_in_hand
+  puts MID_CARD_GRAPHIC * number_of_cards
+  puts ("┃" + "%9.9s" + "┃") * number_of_cards % values_in_hand
+  puts BOTTOM_OF_CARD_GRAPHIC * number_of_cards
+end
+
 deck = initialize_deck
 
 dealer = setup_dealer
@@ -165,7 +187,9 @@ player = setup_player
 deal_starting_hands(deck, player, dealer)
 player_takes_turn(player, deck) 
 # dealer_takes_turn  until busted?(dealer) || stay?[dealer]
-binding.pry
+hand = player[:cards_in_hand]
+display_card_graphics(hand)
+# binding.pry
 
 
 

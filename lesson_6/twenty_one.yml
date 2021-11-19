@@ -9,9 +9,19 @@ invalid_entry: |
   "Valid choices are [%s] %s "
 
 display_player_hand: |
-  "Your hand is %s, and it has a score of %s"
+  "Your hand is [%s], and it has a score of %s"
 
 draw_or_stay: |
   "Do you want to draw a card or stay your hand?" 
   "Type 'stay' to stay your hand or 'draw' to draw a card."
   "Which do you choose? [stay, draw]%s "
+
+
+top_card_line: 
+  ┏━━━━━━━━━┓
+
+mid_card_line: 
+  ┃         ┃
+
+bottom_card_line: 
+  ┗━━━━━━━━━┛
