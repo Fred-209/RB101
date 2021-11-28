@@ -8,10 +8,16 @@ CARD_VALUES = %w[2 3 4 5 6 7 8 9 10 Jack Queen King Ace].zip(
               
 BEST_POSSIBLE_SCORE = 21
 MESSAGES = YAML.load_file('twenty_one.yml')
-PROMPT = " =>"
+
 TOP_OF_CARD_GRAPHIC = MESSAGES['top_card_line']
+UPPER_CARD_LABEL_GRAPHIC = ("┃" + "%-9.9s" + "┃")
 MID_CARD_GRAPHIC = MESSAGES['mid_card_line']
+MIDDLE_CARD_LABEL_GRAPHIC = ("┃" + "%s".center(10) + "┃")
+LOWER_CARD_LABEL_GRAPHIC = ("┃" + "%9.9s" + "┃")
 BOTTOM_OF_CARD_GRAPHIC = MESSAGES['bottom_card_line']
+
+PROMPT = " =>"
+PAUSE_PROMPT = "Press enter to continue #{PROMPT}"
 
 def initialize_deck 
   deck = {}
@@ -22,13 +28,15 @@ def initialize_deck
 end
 
 def setup_dealer
-  {  name: 'Dealer', cards_in_hand: [], hand_score: 0,stay: false, busted: false}
+  {  name: 'Dealer', cards_in_hand: [], hand_score: 0,stay: false, busted: false,
+     winner: false}
 end
 
 def setup_player
   
   name = get_player_name
-  { name: name, cards_in_hand: [], hand_score: 0, stay: false, busted: false}
+  { name: name, cards_in_hand: [], hand_score: 0, stay: false, busted: false,
+    winner: false}
 end
 
 def deal_starting_hands(deck, player, dealer)
@@ -38,20 +46,64 @@ def deal_starting_hands(deck, player, dealer)
   end
 end
 
-def player_takes_turn(player, deck)
-  until busted?(player) || stay?(player)
-    display_player_hand(player)
+def player_takes_turn(player, dealer, deck)
+    
+  until busted?(player) 
+    clear_screen
+    display_participants_hand(dealer)
+    display_participants_hand(player)
+       
     prompt_player_to_draw_card_or_stay(player)
     break if player[:stay]
-    card = get_random_card_from_deck(deck)
-    add_card_to_participants_hand!(player, card)
+    deal_a_card_from_deck_to_participant(deck, player)
   end
+  player[:busted] = true unless stay?(player)
+
+  display_participants_hand(dealer)
+  display_participants_hand(player)
+  puts "Player's score is #{player[:hand_score]}"
+  press_enter_to_continue
+end
+
+def dealer_takes_turn(dealer, player, deck)
+
+  until busted?(dealer)
+    clear_screen
+    display_participants_hand(dealer)
+    display_participants_hand(player)
+    puts dealer[:hand_score]
+    if dealer_should_stay?(dealer[:hand_score])    
+      dealer[:stay] = true
+      break
+    end
+    deal_a_card_from_deck_to_participant(deck, dealer)
+  end
+
+  dealer[:busted] = true unless stay?(dealer)
+
+  display_participants_hand(dealer)
+  display_participants_hand(player)
+  puts "Dealer's score is #{dealer[:hand_score]}."
+  press_enter_to_continue
+end
+
+def dealer_should_stay?(hand_score)
+  hand_score >= 17
 end
 
 def deal_a_card_from_deck_to_participant(deck, participant)
+  participant_is_dealer = participant[:name] == 'Dealer'
   card = get_random_card_from_deck(deck)
+  suit, value = card
   add_card_to_participants_hand!(participant, card)
- 
+  
+  if participant_is_dealer
+    puts MESSAGES['dealer_drew_card'] % [value, suit]
+  else
+    puts MESSAGES['player_drew_card'] % [value, suit]
+  end
+  
+  press_enter_to_continue
 end
 
 def prompt_player_to_draw_card_or_stay(player)
@@ -120,7 +172,6 @@ end
 def calculate_value_of_aces(hand_total, number_of_aces)
   low_ace_values = number_of_aces
   high_ace_values = number_of_aces + 10
-
   if high_ace_values + hand_total > BEST_POSSIBLE_SCORE
     low_ace_values
   else
@@ -128,21 +179,77 @@ def calculate_value_of_aces(hand_total, number_of_aces)
   end
 end
 
-def display_player_hand(player)
-  hand = player[:cards_in_hand]
-  hand_score = player[:hand_score]
+def determine_winner(player, dealer)
+  if player[:busted]
+    dealer[:winner] = true
+    return dealer
+  elsif dealer[:busted]
+    player[:winner] = true
+    return player
+  end
+
+  player_score = player[:hand_score]
+  dealer_score = dealer[:hand_score]
+
+  return nil if tie?(player_score, dealer_score)
+  
+  dealer_score > player_score ? dealer : player
+end
+
+def congratulate_winner(winner)
+  winner_name = winner[:name]
+  puts MESSAGES['congratulate_winner'] % [winner_name]
+end
+
+def tie?(player_score, dealer_score)
+  player_score == dealer_score
+end
+
+def display_participants_hand(participant)
+  participant_is_dealer = participant[:name] == 'Dealer'
+  hand = participant[:cards_in_hand]
+  hand_score = participant[:hand_score]
   hand_formatted= []
   hand.each {|suit, value| hand_formatted << value.chr + suit.to_s}
-  puts MESSAGES['display_player_hand'] % [hand_formatted.join(', '), hand_score]
+  if participant_is_dealer
+    puts "Dealer's Hand"
+    display_card_graphics(hand, participant_is_dealer)
+  else
+    puts "Player's Hand"
+    display_card_graphics(hand)
+  end
+end
+
+def display_card_graphics(hand, dealer_hand=false, final_reveal=false)
+  number_of_cards = hand.size
+  suits_in_hand, values_in_hand = [], []
+
+  hand.each do |suit, value|
+    suits_in_hand << suit
+    values_in_hand << value.chr
+  end
+  if dealer_hand
+    unless final_reveal
+      suits_in_hand[0] = "#"
+      values_in_hand[0] = "#"
+    end
+  end
+  puts TOP_OF_CARD_GRAPHIC * number_of_cards
+  puts UPPER_CARD_LABEL_GRAPHIC * number_of_cards % values_in_hand
+  puts MID_CARD_GRAPHIC * number_of_cards
+  puts MIDDLE_CARD_LABEL_GRAPHIC * number_of_cards % suits_in_hand
+  puts MID_CARD_GRAPHIC * number_of_cards
+  puts LOWER_CARD_LABEL_GRAPHIC * number_of_cards % values_in_hand
+  puts BOTTOM_OF_CARD_GRAPHIC * number_of_cards
+end
+
+def display_tie_game_message
+  puts MESSAGES['tie_game']
 end
 
 def get_player_name
   print MESSAGES['get_player_name']
   get_validated_input
-end
-
-def clear_screen
-  system 'clear'
 end
 
 def get_validated_input(valid_input_list = '')
@@ -160,38 +267,32 @@ def get_validated_input(valid_input_list = '')
   user_input
 end
 
-def display_card_graphics(hand, dealer=false)
-  number_of_cards = hand.size
-  suits_in_hand, values_in_hand = [], []
-  hand.each do |suit, value|
-    suits_in_hand << suit
-    values_in_hand << value.chr
-  end
-  if dealer
-    suits_in_hand[0] = "#"
-    values_in_hand[0] = "#"
-  end
-  puts TOP_OF_CARD_GRAPHIC * number_of_cards
-  puts ("┃" + "%-9.9s" + "┃") * number_of_cards % values_in_hand
-  puts MID_CARD_GRAPHIC * number_of_cards
-  puts ("┃" + "%s".center(10) + "┃") * number_of_cards % suits_in_hand
-  puts MID_CARD_GRAPHIC * number_of_cards
-  puts ("┃" + "%9.9s" + "┃") * number_of_cards % values_in_hand
-  puts BOTTOM_OF_CARD_GRAPHIC * number_of_cards
+def press_enter_to_continue
+  print PAUSE_PROMPT
+  gets
 end
 
-deck = initialize_deck
+def clear_screen
+  system 'clear'
+end
 
+clear_screen
+deck = initialize_deck
 dealer = setup_dealer
 player = setup_player
+
 deal_starting_hands(deck, player, dealer)
-player_takes_turn(player, deck) 
-# dealer_takes_turn  until busted?(dealer) || stay?[dealer]
-hand = player[:cards_in_hand]
-display_card_graphics(hand)
-# binding.pry
 
+player_takes_turn(player, dealer, deck) 
+dealer_takes_turn(dealer, player, deck) unless player[:busted]
 
+winner = determine_winner(player, dealer)
+
+if winner
+  congratulate_winner(winner)
+else
+  display_tie_game_message
+end
 
 
 
