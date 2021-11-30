@@ -28,6 +28,13 @@ congratulate_winner:
 tie_game: 
   "Noone wins, it's a tie!!"
 
+play_again: |
+  Would you like to play again?
+  Type 'y' for yes or 'n' for no.
+  What do you choose? %s
+goodbye_message:
+  Thanks for playing! Goodbye!
+
 top_card_line: 
   ┏━━━━━━━━━┓
 
