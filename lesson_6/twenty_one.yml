@@ -1,32 +1,49 @@
 get_player_name:
-  "Please enter your name: "
+  "Please enter your name: " 
+
+player_greeting: |+
+
+  Hello %s! Let's play some Twenty One!
 
 entered_blank_spaces_only:
-  "Your input cant be only blanks spaces. Try again %s "
+  Your input cant be only blanks spaces. Try again %s
 
 invalid_entry: |
-  "Invalid entry. Try again."
-  "Valid choices are [%s] %s "
+  Invalid entry. Try again.
+  Valid choices are [%s] %s 
 
 display_player_hand: 
-  "Your hand is [%s], and it has a score of %s"
+  Your hand is [%s], and it has a score of %s
 
 draw_or_stay: |
-  "Do you want to draw a card or stay your hand?"
-  "Type 'stay' to stay your hand or 'draw' to draw a card."
-  "Which do you choose? [stay, draw]%s "
+  Do you want to draw a card or stay your hand?
+  Type 'stay' to stay your hand or 'draw' to draw a card.
+  Which do you choose? [stay, draw] %s
 
 dealer_drew_card:
-  "Dealer drew the %s of %s!"
+  Dealer drew the %s of %s!
+
+dealers_first_card: 
+  Dealer drew their first card. You can't see this one!
 
 player_drew_card:
-  "You drew the %s of %s!"
+  You drew the %s of %s!
 
-congratulate_winner:
-  "Congratulations %s! You won this round!"
+congratulate_round_winner:
+  Congratulations %s! You won this round!
+
+congratulate_overall_winner: |
+  Looks like our overall winner is %s! Congratulations!
+  It took you %s rounds to win.
 
 tie_game: 
-  "Noone wins, it's a tie!!"
+  Noone wins, it's a tie!!
+
+display_game_stats: |
+  The game so far:
+  %s has won %s rounds.
+  %s has won %s rounds.
+  There have been %s tie games.
 
 play_again: |
   Would you like to play again?
@@ -43,3 +60,42 @@ mid_card_line:
 
 bottom_card_line:
   ┗━━━━━━━━━┛
+
+welcome_message: |+
+  Welcome to Twenty One!!
+
+  If you're not familiar with this game (Blackjack), the rules are simple. 
+  You will be playing against the Dealer (computer AI).
+  A traditional deck of 52 cards is shuffled, and you and the dealer are both 
+  dealt 2 cards to start with. 
+
+  The goal is to add the values of your cards up to get as close to 21 as possible
+  without going over. If you go over, you're BUSTED! and lose the game. 
+
+  Jack's, Queen's and King's are worth 10, while an Ace is worth 1 or 11, depending
+  on your need at the time.
+  If you have multiple Aces you can mix up their values between 1 and 11 to get 
+  you as close to 21 as possible without going over.
+
+  This game will be played in a '5 points to win' fashion, where the first 
+  to win 5 games is declared the champion.
+
+
+
+welcome_banner: |+
+  ________                                    __                       ______                      
+  /        |                                  /  |                     /      \                     
+  $$$$$$$$/__   __   __   ______   _______   _$$ |_    __    __       /$$$$$$  | _______    ______  
+    $$ | /  | /  | /  | /      \ /       \ / $$   |  /  |  /  |      $$ |  $$ |/       \  /      \ 
+    $$ | $$ | $$ | $$ |/$$$$$$  |$$$$$$$  |$$$$$$/   $$ |  $$ |      $$ |  $$ |$$$$$$$  |/$$$$$$  |
+    $$ | $$ | $$ | $$ |$$    $$ |$$ |  $$ |  $$ | __ $$ |  $$ |      $$ |  $$ |$$ |  $$ |$$    $$ |
+    $$ | $$ \_$$ \_$$ |$$$$$$$$/ $$ |  $$ |  $$ |/  |$$ \__$$ |      $$ \__$$ |$$ |  $$ |$$$$$$$$/ 
+    $$ | $$   $$   $$/ $$       |$$ |  $$ |  $$  $$/ $$    $$ |      $$    $$/ $$ |  $$ |$$       |
+    $$/   $$$$$/$$$$/   $$$$$$$/ $$/   $$/    $$$$/   $$$$$$$ |       $$$$$$/  $$/   $$/  $$$$$$$/ 
+                                                      /  \__$$ |                                    
+                                                      $$    $$/                                     
+                                                      $$$$$$/     
+
+
+
+                                                                                                                          
