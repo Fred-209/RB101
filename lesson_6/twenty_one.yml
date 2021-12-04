@@ -1,4 +1,4 @@
-get_player_name:
+ask_player_name:
   "Please enter your name: " 
 
 player_greeting: |+
@@ -12,12 +12,18 @@ invalid_entry: |
   Invalid entry. Try again.
   Valid choices are [%s] %s 
 
+play_multiple_rounds: |
+  Do you want to play a single game, or play until either you or the dealer
+  has won 5 games?
+  Type 's' for single game or 'm' for multiple games %s
+
 display_player_hand: 
   Your hand is [%s], and it has a score of %s
 
-draw_or_stay: |
+draw_or_stay: |+
   Do you want to draw a card or stay your hand?
   Type 'stay' to stay your hand or 'draw' to draw a card.
+
   Which do you choose? [stay, draw] %s
 
 dealer_drew_card:
@@ -29,17 +35,34 @@ dealers_first_card:
 player_drew_card:
   You drew the %s of %s!
 
-congratulate_round_winner:
+player_hand_display: |+
+  
+  %s's turn.
+  Current hand total: %s
+
+participant_staying: |+
+  Looks like %s is staying their hand with a score of %s
+
+
+busted_message: 
+   With a hand total of %s, it looks like %s BUSTED! 
+
+final_card_results: |+
+  
+  FINAL CARD RESULTS
+  
+congratulate_round_winner: |+
+
   Congratulations %s! You won this round!
 
-congratulate_overall_winner: |
+congratulate_overall_winner: |+
   Looks like our overall winner is %s! Congratulations!
-  It took you %s rounds to win.
-
+  
 tie_game: 
   Noone wins, it's a tie!!
 
-display_game_stats: |
+display_game_stats: |+
+  
   The game so far:
   %s has won %s rounds.
   %s has won %s rounds.

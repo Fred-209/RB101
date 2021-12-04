@@ -1,4 +1,3 @@
-require 'pry'
 require 'yaml'
 
 SUITS = %i[♥ ♠ ♦ ♣]
@@ -19,7 +18,7 @@ MIDDLE_CARD_LABEL_GRAPHIC = ('┃' + '%s'.center(10) + '┃')
 LOWER_CARD_LABEL_GRAPHIC = ('┃' + '%9.9s' + '┃')
 BOTTOM_OF_CARD_GRAPHIC = MESSAGES['bottom_card_line']
 
-PROMPT = ' =>'
+PROMPT = ' => '
 PAUSE_PROMPT = "Press enter to continue #{PROMPT}"
 
 def initialize_deck
@@ -41,7 +40,7 @@ def setup_dealer
 end
 
 def setup_player
-  name = player_name
+  name = ask_player_name
   {
     name: name,
     cards_in_hand: [],
@@ -53,8 +52,20 @@ def setup_player
   }
 end
 
+def ask_player_name
+  print MESSAGES['ask_player_name']
+  get_validated_input
+end
+
 def setup_game_stats
-  {rounds_played: 0, ties: 0}
+  { rounds_played: 0, ties: 0 }
+end
+
+def play_multiple_rounds?
+  clear_screen
+  print format(MESSAGES['play_multiple_rounds'], PROMPT)
+  user_choice = get_validated_input(%w[s m])
+  user_choice == 'm'
 end
 
 def deal_starting_hands(deck, player, dealer)
@@ -64,12 +75,12 @@ def deal_starting_hands(deck, player, dealer)
     puts
     deal_a_card_from_deck_to_participant(deck, player)
     puts
-    display_card_graphics(player[:cards_in_hand])
+    assemble_and_output_card_graphics(player[:cards_in_hand])
     sleep 1.25
     puts
     deal_a_card_from_deck_to_participant(deck, dealer)
     puts
-    display_card_graphics(dealer[:cards_in_hand], dealer_hand=true)
+    assemble_and_output_card_graphics(dealer[:cards_in_hand], true)
     sleep 1.25
   end
   press_enter_to_continue
@@ -80,49 +91,46 @@ def player_takes_turn(player, dealer, deck)
     clear_screen
     display_participants_hand(dealer)
     display_participants_hand(player)
-    puts
-    puts "Player's turn"
-    puts  "Current hand total: #{player[:hand_score]}"
-    puts
+    puts format(
+      MESSAGES['player_hand_display'],
+      player[:name],
+      player[:hand_score]
+    )
+
     prompt_player_to_draw_card_or_stay(player)
     break if player[:stay]
     deal_a_card_from_deck_to_participant(deck, player)
     sleep 1.25
   end
+
   player[:busted] = true unless stay?(player)
-  
-  display_participants_hand(dealer)
-  display_participants_hand(player)
-  press_enter_to_continue
+  display_turn_recap(player) unless player[:busted]
 end
 
-def dealer_takes_turn(dealer, player, deck)
+def dealer_takes_turn(dealer, deck)
   until busted?(dealer)
     clear_screen
-    display_participants_hand(dealer)
-    display_participants_hand(player)
-    puts
+
     puts "Dealer's turn"
     puts
+    display_participants_hand(dealer)
+    puts
+    sleep 1.25
     if dealer_should_stay?(dealer[:hand_score])
       dealer[:stay] = true
       break
     end
     deal_a_card_from_deck_to_participant(deck, dealer)
+    sleep 1.25
   end
 
   dealer[:busted] = true unless stay?(dealer)
-
-  display_participants_hand(dealer)
-  display_participants_hand(player)
-  puts "Dealer's score is #{dealer[:hand_score]}."
-  press_enter_to_continue
+  dealer[:busted] ? display_busted_message(dealer) : display_turn_recap(dealer)
 end
 
 def dealer_should_stay?(hand_score)
   hand_score >= DEALER_HIT_THRESHOLD
 end
-
 
 def deal_a_card_from_deck_to_participant(deck, participant)
   participant_is_dealer = participant[:name] == 'Dealer'
@@ -175,33 +183,30 @@ def update_participants_hand_score!(participant)
   participant[:hand_score] = calculate_total_of_hand(hand)
 end
 
-def busted?(participant)
-  participant[:hand_score] > BEST_POSSIBLE_SCORE
-end
-
-def stay?(participant)
-  participant[:stay]
-end
-
 def calculate_total_of_hand(hand)
-  hand_total = 0
-  hand_has_an_ace = false
-  number_of_aces_in_hand = 0
+  hand_total = sum_of_non_ace_cards(hand)
 
-  hand.each do |card|
-    card_value_name = card.last
-    if card_value_name == 'A'
-      hand_has_an_ace ||= true
-      number_of_aces_in_hand += 1
-      next
-    end
-    card_value = CARD_VALUES[card_value_name]
-    hand_total += card_value
-  end
-  if hand_has_an_ace
+  if hand_has_an_ace?(hand)
+    number_of_aces_in_hand = hand.count { |_, value| value == 'A' }
     hand_total += calculate_value_of_aces(hand_total, number_of_aces_in_hand)
   end
   hand_total
+end
+
+def sum_of_non_ace_cards(hand)
+  hand_total = 0
+
+  hand.each do |card|
+    card_value_name = card.last
+    next if card_value_name == 'A'
+    card_value = CARD_VALUES[card_value_name]
+    hand_total += card_value
+  end
+  hand_total
+end
+
+def hand_has_an_ace?(hand)
+  hand.any? { |_, value| value == 'A' }
 end
 
 def calculate_value_of_aces(hand_total, number_of_aces)
@@ -211,6 +216,14 @@ def calculate_value_of_aces(hand_total, number_of_aces)
     ace_score -= 10 if hand_total + ace_score > BEST_POSSIBLE_SCORE
   end
   ace_score
+end
+
+def busted?(participant)
+  participant[:hand_score] > BEST_POSSIBLE_SCORE
+end
+
+def stay?(participant)
+  participant[:stay]
 end
 
 def determine_winner(player, dealer)
@@ -235,7 +248,7 @@ end
 
 def update_winners_points!(winner)
   winner[:points] += 1
-end  
+end
 
 def tie?(player_score, dealer_score)
   player_score == dealer_score
@@ -246,49 +259,89 @@ def display_player_greeting(name)
   press_enter_to_continue
 end
 
-def display_participants_hand(participant)
+def display_participants_hand(participant, final_result = false)
   participant_is_dealer = participant[:name] == 'Dealer'
   hand = participant[:cards_in_hand]
   hand_formatted = []
   hand.each { |suit, value| hand_formatted << value.chr + suit.to_s }
   if participant_is_dealer
     puts "Dealer's Hand"
-    display_card_graphics(hand, participant_is_dealer)
+    assemble_and_output_card_graphics(hand, participant_is_dealer, final_result)
   else
     puts "Player's Hand"
-    display_card_graphics(hand)
+    assemble_and_output_card_graphics(hand)
   end
 end
 
+def display_final_cards(player, dealer)
+  clear_screen
+  puts MESSAGES['final_card_results']
+  display_participants_hand(dealer, true)
+  puts "Score: #{dealer[:hand_score]}"
+  puts
+  display_participants_hand(player)
+  puts "Score: #{player[:hand_score]}"
+  puts
+  press_enter_to_continue
+end
+
 def display_shuffle_deck_animation
-  print "Shuffling deck...."
+  print 'Shuffling deck....'
   %w[| / - \\].cycle(3) do |piece|
     print piece
     sleep 0.15
     print "\b"
   end
-  puts "Ready to deal!"
+  puts 'Ready to deal!'
 end
 
-def display_card_graphics(hand, dealer_hand = false, final_reveal = false)
+def assemble_and_output_card_graphics(
+  hand, dealer_hand = false, show_all_dealer_cards = false
+)
   number_of_cards = hand.size
   suits_in_hand = hand.map { |card| card[0] }
   values_in_hand = hand.map { |card| card[1] }
-  
+
   if dealer_hand
-    unless final_reveal
+    unless show_all_dealer_cards
       suits_in_hand[0] = '#'
       values_in_hand[0] = '#'
     end
   end
-  
+
+  display_card_graphics(number_of_cards, suits_in_hand, values_in_hand)
+end
+
+def display_card_graphics(number_of_cards, suits, values)
   puts TOP_OF_CARD_GRAPHIC * number_of_cards
-  puts UPPER_CARD_LABEL_GRAPHIC * number_of_cards % values_in_hand
+  puts UPPER_CARD_LABEL_GRAPHIC * number_of_cards % values
   puts MID_CARD_GRAPHIC * number_of_cards
-  puts MIDDLE_CARD_LABEL_GRAPHIC * number_of_cards % suits_in_hand
+  puts MIDDLE_CARD_LABEL_GRAPHIC * number_of_cards % suits
   puts MID_CARD_GRAPHIC * number_of_cards
-  puts LOWER_CARD_LABEL_GRAPHIC * number_of_cards % values_in_hand
+  puts LOWER_CARD_LABEL_GRAPHIC * number_of_cards % values
   puts BOTTOM_OF_CARD_GRAPHIC * number_of_cards
+end
+
+def display_turn_recap(participant)
+  clear_screen
+  puts 'Turn Recap'
+  puts
+  display_participants_hand(participant)
+  puts format(
+    MESSAGES['participant_staying'],
+    participant[:name],
+    participant[:hand_score]
+  )
+  press_enter_to_continue
+end
+
+def display_busted_message(participant)
+  name = participant[:name]
+  hand_score = participant[:hand_score]
+
+  display_participants_hand(participant)
+  puts format(MESSAGES['busted_message'], hand_score, name)
+  press_enter_to_continue
 end
 
 def display_game_stats(player, dealer, game_stats)
@@ -296,25 +349,29 @@ def display_game_stats(player, dealer, game_stats)
   dealer_name = dealer[:name]
   player_points = player[:points]
   dealer_points = dealer[:points]
-  rounds_played = game_stats[:rounds_played]
   ties = game_stats[:ties]
 
-  puts format(MESSAGES['display_game_stats'], player_name, player_points,
-              dealer_name, dealer_points, ties)
-end 
+  puts format(
+    MESSAGES['display_game_stats'],
+    player_name,
+    player_points,
+    dealer_name,
+    dealer_points,
+    ties
+  )
+end
 
 def congratulate_round_winner(winner)
   winner_name = winner[:name]
+
+  clear_screen
   puts format(MESSAGES['congratulate_round_winner'], winner_name)
-  press_enter_to_continue
 end
 
-def congratulate_overall_winner(winner, game_stats)
+def congratulate_overall_winner(winner)
   winner_name = winner[:name]
-  rounds_played = game_stats[:rounds_played]
-
-  puts format(MESSAGES['congratulate_overall_winner'], winner_name, rounds_played)
-  press_enter_to_continue
+  clear_screen
+  puts format(MESSAGES['congratulate_overall_winner'], winner_name)
 end
 
 def reset_players!(*participants)
@@ -333,11 +390,6 @@ def play_again?
   yes_or_no == 'y'
 end
 
-def player_name
-  print MESSAGES['get_player_name']
-  get_validated_input
-end
-
 def get_validated_input(valid_input_list = '')
   user_input = ''
 
@@ -347,10 +399,18 @@ def get_validated_input(valid_input_list = '')
       print format(MESSAGES['entered_blank_spaces_only'], PROMPT)
     else
       break if valid_input_list.include?(user_input) || valid_input_list.empty?
-      print format(MESSAGES['invalid_entry'], valid_input_list.join(', '), PROMPT)
+      print format(
+        MESSAGES['invalid_entry'],
+        valid_input_list.join(', '),
+        PROMPT
+      )
     end
   end
   user_input
+end
+
+def single_game?(points_to_win)
+  points_to_win == 1
 end
 
 def press_enter_to_continue
@@ -369,6 +429,7 @@ def display_welcome_screen
 end
 
 def display_tie_game_message
+  clear_screen
   puts MESSAGES['tie_game']
 end
 
@@ -376,52 +437,63 @@ def display_goodbye_message
   puts MESSAGES['goodbye_message']
 end
 
-has_seen_welcome_screen = false
+first_run = true
 loop do
-  display_welcome_screen unless has_seen_welcome_screen
-  has_seen_welcome_screen = true
-  
+  clear_screen
+  if first_run
+    display_welcome_screen
+    first_run = false
+  end
+
   dealer = setup_dealer
   player = setup_player
   game_stats = setup_game_stats
 
   display_player_greeting(player[:name])
-  
-  # play until player or dealer has won 5 games
-  until player[:points] >= 5 || dealer[:points] >= 5
+
+  points_to_win = play_multiple_rounds? ? 5 : 1
+
+  until player[:points] >= points_to_win || dealer[:points] >= points_to_win
     game_stats[:rounds_played] += 1
     deck = initialize_deck
 
     clear_screen
-    puts "Starting round #{game_stats[:rounds_played]}"
-   
+    if single_game?(points_to_win)
+      puts 'Playing Single Game'
+    else
+      puts "Starting round #{game_stats[:rounds_played]}"
+    end
 
     deal_starting_hands(deck, player, dealer)
     player_takes_turn(player, dealer, deck)
-    dealer_takes_turn(dealer, player, deck) unless player[:busted]
+
+    if player[:busted]
+      display_busted_message(player)
+    else
+      dealer_takes_turn(dealer, deck)
+    end
+
+    display_final_cards(player, dealer)
 
     winner = determine_winner(player, dealer)
 
     if winner
       update_winners_points!(winner)
-      congratulate_round_winner(winner)
+      congratulate_round_winner(winner) unless single_game?(points_to_win)
     else
       display_tie_game_message
       game_stats[:ties] += 1
     end
-    display_game_stats(player, dealer, game_stats)
-    reset_players!(player, dealer)
-    press_enter_to_continue
+
+    unless single_game?(points_to_win)
+      display_game_stats(player, dealer, game_stats)
+      reset_players!(player, dealer)
+      press_enter_to_continue
+    end
   end
 
-congratulate_overall_winner(winner, game_stats)
-
-break unless play_again?
+  congratulate_overall_winner(winner)
+  break unless play_again?
 end
 
 display_goodbye_message
-
-
-
-
-
